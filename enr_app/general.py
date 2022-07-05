@@ -61,7 +61,7 @@ st.session_state['EPCI'] = epci_default
 
 liste_regions = [region_default] + zones.set_index('TypeZone').loc['Régions', 'Zone'].to_list()
 
-st.session_state['filieres'] = filieres
+st.session_state['filieres'] = {x: True for x in filieres}
 
 def select_zone():
     """
@@ -116,7 +116,8 @@ def select_filieres():
     Returns: un dictionnaire avec filière, True/False
     """
     st.sidebar.write('Filières')
-    st.session_state['filieres'] = {fil: st.sidebar.checkbox(fil, True) for fil in filieres}
+    st.session_state['filieres'] = {fil: st.sidebar.checkbox(fil, st.session_state['filieres'].get(fil, True))
+                                    for fil in filieres}
     return [k for k, v in st.session_state['filieres'].items() if v]
 
 def select_installations(type_zone, zone, filiere=None):
