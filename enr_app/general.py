@@ -12,7 +12,7 @@ def load_zones():  # FIXME
     departements = pd.read_json('https://geo.api.gouv.fr/departements')\
         .rename(columns={'nom': 'Zone', 'code': 'CodeZone'})\
         .merge(regions.rename(columns={'Zone': 'Region', 'CodeZone': 'codeRegion'}), on='codeRegion')
-    epcis = pd.read_csv('epcis.csv')\
+    epcis = pd.read_csv('data/epcis.csv')\
         .merge(departements.rename(columns={'Zone': 'Departement'}), left_on='DEPARTEMENTS_DE_L_EPCI', right_on='CodeZone')\
         .drop(columns=['CodeZone', 'DEPARTEMENTS_DE_L_EPCI'])\
         .rename(columns={'EPCI': 'CodeZone', 'NOM_EPCI': 'Zone'})
