@@ -10,9 +10,18 @@ filieres = select_filieres()
 st.write("# Bienvenu à l'outil EnR")
 
 annee = 2020
-puissance = int(select_indicateur(type_zone, zone, filieres, annee, 'Puissance.totale.en.kW').sum()/1e3)
-energie = int(select_indicateur(type_zone, zone, filieres, annee, 'Energie.totale.en.kWh').sum()/1e6)
-nombre = int(select_indicateur(type_zone, zone, filieres, annee, 'Nombre de sites').sum())
+try:
+    puissance = int(select_indicateur(type_zone, zone, filieres, annee, 'Puissance.totale.en.kW').sum()/1e3)
+except KeyError:
+    puissance = 'N/A'
+try:
+    energie = int(select_indicateur(type_zone, zone, filieres, annee, 'Energie.totale.en.kWh').sum()/1e6)
+except KeyError:
+    energie = 'N/A'
+try:
+    nombre = int(select_indicateur(type_zone, zone, filieres, annee, 'Nombre de sites').sum())
+except KeyError:
+    nombre = 'N/A'
 
 
 col1, col2, col3 = st.columns(3)
@@ -21,7 +30,7 @@ col2.metric(f'Énergie produite en {annee}', f'{energie} GWh')
 col3.metric(f'Nombre de sites en {annee}', nombre)
 
 
-st.markdown(f'### Installations en France métropolitaine: {st.session_state["Zone"]}')
+st.markdown(f"### Installations en France métropolitaine et départements d'outre-mer: {st.session_state['Zone']}")
 installations = select_installations(type_zone, zone, filieres)
 n_installations = len(installations)
 installations = installations.iloc[:1000]  # TODO: remove limitation
