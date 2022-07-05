@@ -37,12 +37,13 @@ installations = installations.iloc[:1000]  # TODO: remove limitation
 
 
 # FIXME: median -> mean after filtering on metropole ?
-map = folium.Map(location=[installations.geometry.y.median(), installations.geometry.x.median()], zoom_start=5)
-tooltip = folium.GeoJsonTooltip(['nominstallation', 'typo'])
-gjson = folium.GeoJson(installations, tooltip=tooltip, name="Installations")
-gjson.add_to(map)
-folium_static(map)
+if n_installations:
+    map = folium.Map(location=[installations.geometry.y.median(), installations.geometry.x.median()], zoom_start=5)
+    tooltip = folium.GeoJsonTooltip(['nominstallation', 'typo'])
+    gjson = folium.GeoJson(installations, tooltip=tooltip, name="Installations")
+    gjson.add_to(map)
+    folium_static(map)
 
-columns = ['nominstallation', 'date_inst', 'puiss_MW', 'typo', 'NOM_EPCI', 'NOM_DEP', 'NOM_REG']
-st.dataframe(installations[columns])
+    columns = ['nominstallation', 'date_inst', 'puiss_MW', 'typo', 'NOM_EPCI', 'NOM_DEP', 'NOM_REG']
+    st.dataframe(installations[columns])
 st.write(f'Installations: {n_installations}')

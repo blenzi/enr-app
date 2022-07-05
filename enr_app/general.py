@@ -12,14 +12,16 @@ def load_zones():  # FIXME
     departements = pd.read_json('https://geo.api.gouv.fr/departements')\
         .rename(columns={'nom': 'Zone', 'code': 'CodeZone'})\
         .merge(regions.rename(columns={'Zone': 'Region', 'CodeZone': 'codeRegion'}), on='codeRegion')
-    epcis = pd.read_csv('data/liste_zones_dep.csv').astype({'dep': str}) \
-        .merge(departements.rename(columns={'Zone': 'Departement', 'CodeZone': 'dep'}), on='dep')
-    epcis = epcis[epcis['Zone'] != epcis['Departement']]
+    epcis = pd.read_csv('epcis.csv')\
+        .merge(departements.rename(columns={'Zone': 'Departement'}), left_on='DEPARTEMENTS_DE_L_EPCI', right_on='CodeZone')\
+        .drop(columns=['CodeZone', 'DEPARTEMENTS_DE_L_EPCI'])\
+        .rename(columns={'EPCI': 'CodeZone', 'NOM_EPCI': 'Zone'})
     zones = pd.concat([regions, departements, epcis], keys=['Régions', 'Départements', 'Epci']) \
         .reset_index().rename(columns={'level_0': 'TypeZone'})\
-        .drop(columns=['level_1', 'codeRegion', 'dep']) \
+        .drop(columns=['level_1', 'codeRegion'])\
         .sort_values(['TypeZone', 'Zone'])
     return zones
+
 
 zones = load_zones()
 
@@ -133,8 +135,8 @@ def select_installations(type_zone, zone, filiere=None):
               'Départements': 'NOM_DEP',
               'Epci': 'NOM_EPCI'}[type_zone]
     if type_zone != 'Régions' or zone != region_default:
-        installations = installations.set_index(column).loc[zone].reset_index()
-    if filiere is not None:
+        installations = installations.query(f'{column} == "{zone}"')
+    if len(installations) and filiere is not None:
         selected_filieres = []
         if 'Photovoltaïque' in filiere:
             selected_filieres.extend(['solaire photovoltaïque', 'solaire thermodynamique'])
@@ -142,7 +144,6 @@ def select_installations(type_zone, zone, filiere=None):
             selected_filieres.extend(['éolien terrestre', 'éolien marin'])
         if 'Bio Energie' in filiere:
             selected_filieres.extend(['méthanisation'])
-        st.write(f'Filières sélectionnées: {selected_filieres}')
         return installations.loc[installations.typo.isin(selected_filieres)]
     return installations
 
