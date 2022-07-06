@@ -10,6 +10,9 @@ import geopandas as gpd
 region_default = 'Toutes'
 departement_default = 'Tous'
 epci_default = 'Tous'
+# TODO: récupérer depuis fichier avec données
+# N.B.: il faut que ce soit en ordre alphabétique pour que les couleurs et markers correspondent
+filieres = ['Eolien', 'Injection de biométhane', 'Méthanisation électrique', 'Photovoltaïque']
 
 @st.cache
 def load_zones():  # FIXME
@@ -32,32 +35,86 @@ zones = load_zones()
 
 @st.cache
 def load_installations():
-    installations = gpd.read_file('data/installations.gpkg', layer='installations').to_crs(epsg=4326)
-    return installations[~installations.geometry.is_empty]
+    filiere = {'solaire photovoltaïque': 'Photovoltaïque', 
+               'éolien terrestre': 'Eolien',
+               'éolien marin': 'Eolien',
+               'méthanisation': 'Méthanisation électrique'
+               }
+
+    installations = gpd.read_file('data/installations.gpkg', layer='installations').to_crs(epsg=4326)\
+        .assign(Filière=lambda x: x['typo'].replace(filiere) )
+
+    inst = pd.concat([installations, load_installations_biogaz()])
+    return inst[~inst.geometry.is_empty]
+
+@st.cache
+def load_installations_biogaz():
+    return gpd.read_file('data/installations.gpkg', layer='installations_biogaz')\
+        .to_crs(epsg=4326)\
+        .rename(columns={'nom_du_projet': 'nominstallation',
+                         'date_de_mes': 'date_inst',
+                         'quantite_annuelle_injectee_en_mwh': 'prod_MWh_an',
+                         'type': 'typo'}) \
+        .assign(Filière='Injection de biométhane',
+                puiss_MW=lambda x: x['capacite_de_production_gwh_an'] / (365 * 24) * 1e3,
+                energie_GWh=lambda x: x['prod_MWh_an'] * 1e-3
+                )
 
 @st.cache
 def load_indicateurs():
     Enedis = pd.read_csv('data/Enedis_com_a_reg_all.csv', index_col=0) \
-        .merge(zones, on=['TypeZone', 'CodeZone'])
+        .merge(zones, on=['TypeZone', 'CodeZone']) \
+        .rename(columns={'Filiere.de.production': 'Filière'}) \
+        .replace({'Bio Energie': 'Méthanisation électrique'})
 
     sdes = pd.read_csv('data/SDES_indicateurs_depts_regions_France.csv') \
         .set_index('Zone').drop('Total DOM').reset_index() \
-        .replace({'Total France': 'Toutes', 'Somme': 'Régions'}).assign(type_estimation='SDES')
+        .replace({'Total France': 'Toutes', 'Somme': 'Régions'}) \
+        .rename(columns={'Filiere.de.production': 'Filière'}) \
+        .assign(type_estimation='SDES')
 
     France = Enedis.query("TypeZone == 'Régions'") \
-        .groupby(['indicateur', 'Filiere.de.production', 'annee']).sum().reset_index() \
+        .groupby(['indicateur', 'Filière', 'annee']).sum().reset_index() \
         .assign(TypeZone='Régions', Zone='Toutes', type_estimation='Somme')
 
     indicateurs = pd.concat([Enedis, France, sdes]) \
-        .drop_duplicates(['TypeZone', 'Zone', 'annee', 'Filiere.de.production', 'indicateur'], keep='last') \
-        .pivot_table(
-        index=['TypeZone', 'Zone', 'Filiere.de.production', 'annee'],
-        values='valeur',
-        columns='indicateur')
+        .drop_duplicates(['TypeZone', 'Zone', 'annee', 'Filière', 'indicateur'], keep='last') \
+        .pivot_table(index=['TypeZone', 'Zone', 'Filière', 'annee'],
+                     values='valeur', 
+                     columns='indicateur') \
+        .assign(puiss_MW=lambda x: x['Puissance.totale.en.kW'] / 1e3,
+                energie_GWh=lambda x: x['Energie.totale.en.kWh'] / 1e6) \
+        .drop(columns=['Puissance.totale.en.kW', 'Energie.totale.en.kWh'])
 
-    return indicateurs
+    return pd.concat([indicateurs, *get_indicateurs_biogaz()])
 
-filieres = load_indicateurs().index.get_level_values('Filiere.de.production').unique().to_list()
+@st.cache
+def get_indicateurs_biogaz():
+    """
+    Returns: liste de tableaux contenant les indicateurs pour le biogaz aux niveaux des EPCI, départements, régions
+    et toute la France
+    """
+    # FIXME: évolution au cours des années. 2020 c'est peut-être même pas la bonne année
+    installations_biogaz = load_installations_biogaz()
+
+    France = installations_biogaz.agg({'puiss_MW': 'sum', "energie_GWh": 'sum', 'NOM_REG': 'count'}) \
+        .to_frame().T \
+        .assign(Zone=region_default, TypeZone='Régions') \
+        .rename(columns={'NOM_REG': 'Nombre de sites'})
+
+    # Indicateurs aux niveaux EPCI, départements, régions
+    ind = [installations_biogaz.groupby(column).agg(
+        puiss_MW=("puiss_MW", 'sum'),
+        energie_GWh=("energie_GWh", 'sum'),
+        N=("puiss_MW", 'count')
+    ).reset_index().rename(columns={'N': 'Nombre de sites', column: 'Zone'}) \
+               .assign(TypeZone=type_zone)
+           for type_zone, column in {'Epci': 'NOM_EPCI', 'Départements': 'NOM_DEP', 'Régions': 'NOM_REG'}.items()]
+
+    return [df.assign(annee=2020, Filière='Injection de biométhane')
+              .set_index(['TypeZone', 'Zone', 'Filière', 'annee'])
+               for df in [France] + ind]
+
 liste_regions = [region_default] + zones.set_index('TypeZone').loc['Régions', 'Zone'].to_list()
 
 def select_zone():
@@ -116,8 +173,7 @@ def select_filieres():
     st.sidebar.write('Filières')
     if 'filieres' not in st.session_state:
         st.session_state['filieres'] = {x: True for x in filieres}
-    st.session_state['filieres'] = {fil: st.sidebar.checkbox(fil, st.session_state['filieres'].get(fil, True))
-                                    for fil in filieres}
+    st.session_state['filieres'] = {k: st.sidebar.checkbox(k, v) for k, v in st.session_state['filieres'].items()}
     return [k for k, v in st.session_state['filieres'].items() if v]
 
 def select_installations(type_zone, zone, filiere=None):
@@ -138,14 +194,7 @@ def select_installations(type_zone, zone, filiere=None):
     if type_zone != 'Régions' or zone != region_default:
         installations = installations.query(f'{column} == "{zone}"')
     if len(installations) and filiere is not None:
-        selected_filieres = []
-        if 'Photovoltaïque' in filiere:
-            selected_filieres.extend(['solaire photovoltaïque', 'solaire thermodynamique'])
-        if 'Eolien' in filiere:
-            selected_filieres.extend(['éolien terrestre', 'éolien marin'])
-        if 'Bio Energie' in filiere:
-            selected_filieres.extend(['méthanisation'])
-        return installations.loc[installations.typo.isin(selected_filieres)]
+        return installations.loc[installations['Filière'].isin(filiere)]
     return installations
 
 def select_indicateur(type_zone, zone, filiere=slice(None), annee=slice(None), indicateur=slice(None)):
@@ -170,7 +219,7 @@ def get_colors():
     """
     # colors from category10 in https://vega.github.io/vega/docs/schemes/#categorical
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
-    return [c for (fil, selected), c in zip(st.session_state['filieres'].items(), colors) if selected]
+    return [x for fil, x in zip(filieres, colors) if st.session_state['filieres'].get(fil)]
 
 def get_markers():
     """
@@ -178,4 +227,4 @@ def get_markers():
     """
     # https://vega.github.io/vega/docs/marks/symbol/
     markers = ['circle', 'square', 'triangle', 'cross', 'diamond']
-    return [m for (fil, selected), m in zip(st.session_state['filieres'].items(), markers) if selected]
+    return [x for fil, x in zip(filieres, markers) if st.session_state['filieres'].get(fil)]

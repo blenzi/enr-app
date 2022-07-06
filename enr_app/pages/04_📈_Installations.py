@@ -11,7 +11,6 @@ st.write(f'Filières sélectionnées: {", ".join(filieres)}')
 
 df = select_indicateur(type_zone, zone, filiere=filieres, indicateur='Nombre de sites')\
   .reset_index()\
-  .rename(columns={'Filiere.de.production': 'Filière'})\
   .drop(columns=['TypeZone', 'Zone']).astype({'Nombre de sites': int})
 
 c = alt.Chart(df, width=600).mark_bar().encode(

@@ -11,11 +11,11 @@ st.write("# Bienvenu à l'outil EnR")
 
 annee = 2020
 try:
-    puissance = int(select_indicateur(type_zone, zone, filieres, annee, 'Puissance.totale.en.kW').sum()/1e3)
+    puissance = int(select_indicateur(type_zone, zone, filieres, annee, 'puiss_MW').sum())
 except KeyError:
     puissance = 'N/A'
 try:
-    energie = int(select_indicateur(type_zone, zone, filieres, annee, 'Energie.totale.en.kWh').sum()/1e6)
+    energie = int(select_indicateur(type_zone, zone, filieres, annee, 'energie_GWh').sum())
 except KeyError:
     energie = 'N/A'
 try:
@@ -25,7 +25,7 @@ except KeyError:
 
 
 col1, col2, col3 = st.columns(3)
-col1.metric(f'Puissance maximum installée en {annee}', f'{puissance} GWh')
+col1.metric(f'Puissance maximum installée en {annee}', f'{puissance} MW')
 col2.metric(f'Énergie produite en {annee}', f'{energie} GWh')
 col3.metric(f'Nombre de sites en {annee}', nombre)
 
@@ -33,14 +33,13 @@ col3.metric(f'Nombre de sites en {annee}', nombre)
 st.markdown(f"### Installations en France métropolitaine et départements d'outre-mer: {st.session_state['Zone']}")
 installations = select_installations(type_zone, zone, filieres)
 n_installations = len(installations)
-installations = installations.iloc[:1000]  # TODO: remove limitation
-
 
 # FIXME: median -> mean after filtering on metropole ?
 if n_installations:
+    subset = installations.iloc[:1000]  # TODO: remove limitation
     map = folium.Map(location=[installations.geometry.y.median(), installations.geometry.x.median()], zoom_start=5)
     tooltip = folium.GeoJsonTooltip(['nominstallation', 'typo'])
-    gjson = folium.GeoJson(installations, tooltip=tooltip, name="Installations")
+    gjson = folium.GeoJson(subset, tooltip=tooltip, name="Installations")
     gjson.add_to(map)
     folium_static(map)
 

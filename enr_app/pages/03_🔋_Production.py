@@ -9,11 +9,10 @@ st.write("# Production")
 st.write(f'Zone: {zone}')
 st.write(f'Filières sélectionnées: {", ".join(filieres)}')
 
-df = select_indicateur(type_zone, zone, filiere=filieres, indicateur='Energie.totale.en.kWh')\
+df = select_indicateur(type_zone, zone, filiere=filieres, indicateur='energie_GWh')\
   .reset_index()\
-  .assign(energie_GWh=lambda x: x['Energie.totale.en.kWh']/1e6)\
-  .rename(columns={'Filiere.de.production': 'Filière', 'energie_GWh': 'Énergie produite (GWh)'})\
-  .drop(columns=['TypeZone', 'Zone', 'Energie.totale.en.kWh'])
+  .rename(columns={'energie_GWh': 'Énergie produite (GWh)'})\
+  .drop(columns=['TypeZone', 'Zone'])
 
 line = alt.Chart(df, width=600).mark_line().encode(
     x='annee:O',
