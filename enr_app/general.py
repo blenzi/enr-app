@@ -6,6 +6,11 @@ import pandas as pd
 import geopandas as gpd
 
 
+# Defaults
+region_default = 'Toutes'
+departement_default = 'Tous'
+epci_default = 'Tous'
+
 @st.cache
 def load_zones():  # FIXME
     regions = pd.read_json('https://geo.api.gouv.fr/regions').rename(columns={'nom': 'Zone', 'code': 'CodeZone'})
@@ -53,19 +58,7 @@ def load_indicateurs():
     return indicateurs
 
 filieres = load_indicateurs().index.get_level_values('Filiere.de.production').unique().to_list()
-
-# Defaults
-region_default = 'Toutes'
-departement_default = 'Tous'
-epci_default = 'Tous'
-
-st.session_state['region'] = region_default
-st.session_state['departement'] = departement_default
-st.session_state['EPCI'] = epci_default
-
 liste_regions = [region_default] + zones.set_index('TypeZone').loc['Régions', 'Zone'].to_list()
-
-st.session_state['filieres'] = {x: True for x in filieres}
 
 def select_zone():
     """
@@ -80,16 +73,16 @@ def select_zone():
     def on_change_department():
         st.session_state['EPCI'] = epci_default
 
-    st.session_state['region'] = st.sidebar.selectbox('Région', liste_regions,
-                                                      liste_regions.index(st.session_state['region']),
-                                                      on_change=on_change_region)
+    index = liste_regions.index(st.session_state['region']) if 'region' in st.session_state else 0
+    st.session_state['region'] = st.sidebar.selectbox('Région', liste_regions, index, on_change=on_change_region)
 
     # Restreint les départements et EPCIs à la région / département choisi
     reg = st.session_state['region'] if st.session_state['region'] != region_default else slice(None)
     liste_departements = [departement_default] + \
                          zones.set_index(['TypeZone', 'Region']).loc[('Départements', reg), 'Zone'].to_list()
+    index = liste_departements.index(st.session_state['departement']) if 'department' in st.session_state else 0
     st.session_state['departement'] = st.sidebar.selectbox('Département', liste_departements,
-                                                           liste_departements.index(st.session_state['departement']),
+                                                           index,
                                                            on_change=on_change_department)
 
     dep = st.session_state['departement'] if st.session_state['departement'] != departement_default else slice(None)
@@ -99,8 +92,9 @@ def select_zone():
             .drop_duplicates().to_list()
     except:  # FIXME
         liste_epcis = [epci_default] + zones.set_index('TypeZone').loc['Epci', 'Zone'].to_list()
-    st.session_state['EPCI'] = st.sidebar.selectbox('EPCI', liste_epcis,
-                                                    liste_epcis.index(st.session_state['EPCI']))
+
+    index = liste_epcis.index(st.session_state['EPCI']) if 'EPCI' in st.session_state else 0
+    st.session_state['EPCI'] = st.sidebar.selectbox('EPCI', liste_epcis, index)
 
     if st.session_state['EPCI'] != epci_default:
         st.session_state['TypeZone'] = 'Epci'
@@ -120,6 +114,8 @@ def select_filieres():
     Returns: un dictionnaire avec filière, True/False
     """
     st.sidebar.write('Filières')
+    if 'filieres' not in st.session_state:
+        st.session_state['filieres'] = {x: True for x in filieres}
     st.session_state['filieres'] = {fil: st.sidebar.checkbox(fil, st.session_state['filieres'].get(fil, True))
                                     for fil in filieres}
     return [k for k, v in st.session_state['filieres'].items() if v]
