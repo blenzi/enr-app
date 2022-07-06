@@ -1,6 +1,6 @@
 import altair as alt
 import streamlit as st
-from enr_app.general import select_zone, select_filieres, select_indicateur
+from enr_app.general import select_zone, select_filieres, select_indicateur, get_colors
 
 type_zone, zone = select_zone()
 filieres = select_filieres()
@@ -19,10 +19,8 @@ df = select_indicateur(type_zone, zone, filiere=filieres, indicateur='Puissance.
 c = alt.Chart(df, width=600).mark_bar().encode(
   x='annee:O',
   y='Puissance maximum (MW):Q',
-  color='Filière:N'
+  color=alt.Color('Filière:N', scale=alt.Scale(range=get_colors()))
 )
-
-    # color=alt.Color('color', scale=None)
 
 st.altair_chart(c)
 st.dataframe(df, width=600)
