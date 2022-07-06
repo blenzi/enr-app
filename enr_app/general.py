@@ -213,18 +213,22 @@ def select_indicateur(type_zone, zone, filiere=slice(None), annee=slice(None), i
     """
     return load_indicateurs().loc[(type_zone, zone, filiere, annee), indicateur]
 
-def get_colors():
+def get_colors(liste_filieres=None):
     """
     Returns: liste de couleurs à utiliser selon les filières sélectionnées, pour garder la même couleur par filière
     """
     # colors from category10 in https://vega.github.io/vega/docs/schemes/#categorical
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
-    return [x for fil, x in zip(filieres, colors) if st.session_state['filieres'].get(fil)]
+    d = st.session_state['filieres'] if liste_filieres is None \
+        else {fil: fil in liste_filieres for fil in filieres}
+    return [x for fil, x in zip(filieres, colors) if d.get(fil)]
 
-def get_markers():
+def get_markers(liste_filieres=None):
     """
     Returns: liste de symboles à utiliser selon les filières sélectionnées, pour garder le même symbole par filière
     """
     # https://vega.github.io/vega/docs/marks/symbol/
     markers = ['circle', 'square', 'triangle', 'cross', 'diamond']
-    return [x for fil, x in zip(filieres, markers) if st.session_state['filieres'].get(fil)]
+    d = st.session_state['filieres'] if liste_filieres is None \
+        else {fil: fil in liste_filieres for fil in filieres}
+    return [x for fil, x in zip(filieres, markers) if d.get(fil)]

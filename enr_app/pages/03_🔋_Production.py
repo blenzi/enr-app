@@ -1,5 +1,6 @@
 import altair as alt
 import streamlit as st
+import pandas as pd
 from enr_app.general import select_zone, select_filieres, select_indicateur, get_colors, get_markers
 
 type_zone, zone = select_zone()
@@ -9,10 +10,19 @@ st.write("# Production")
 st.write(f'Zone: {zone}')
 st.write(f'Filières sélectionnées: {", ".join(filieres)}')
 
+add_sraddet = False
 df = select_indicateur(type_zone, zone, filiere=filieres, indicateur='energie_GWh')\
   .reset_index()\
   .rename(columns={'energie_GWh': 'Énergie produite (GWh)'})\
   .drop(columns=['TypeZone', 'Zone'])
+
+if type_zone == 'Régions' and zone == 'Grand Est' and st.checkbox('Objectifs SRADDET'):
+    add_sraddet = True
+    sraddet = pd.read_csv('data/objectifs_SRADDET_GrandEst.csv', sep=';').set_index('Filière').stack() \
+        .rename('Objectif').rename_axis(index={None: 'annee'}).reset_index().astype({'annee': int})
+
+    df = pd.merge(df, sraddet.loc[sraddet['Filière'].isin(filieres)], on=['Filière', 'annee'], how='outer')\
+        .sort_values(['Filière', 'annee']).reset_index(drop=True)
 
 line = alt.Chart(df, width=600).mark_line().encode(
     x='annee:O',
@@ -25,10 +35,23 @@ points = line.mark_point(filled=True).encode(
     shape=alt.Shape('Filière', scale=alt.Scale(range=get_markers()))
 )
 
-c = alt.layer(
-    line,
-    points
-).resolve_scale(
+layers = [line, points]
+if add_sraddet:
+    # lf = df.dropna(subset='Objectif')['Filière'].unique()
+    # st.write(lf, get_colors(lf) )
+    line_sraddet = line.mark_line(strokeDash=[1.], point=True).encode(
+        x='annee:O',
+        y='Objectif',
+        color=alt.Color('Filière', scale=alt.Scale(range=get_colors()), legend=None)
+    )
+    # FIXME: Colors and markers are wrong because not all Filières are present ?
+    points_sraddet = line_sraddet.mark_point(filled=False).encode(
+        color=alt.Color('Filière', scale=alt.Scale(range=get_colors(df)), legend=None),
+        shape=alt.Shape('Filière', scale=alt.Scale(range=get_markers(df)), legend=None),
+    )
+    layers.extend([line_sraddet]) #, points_sraddet])
+
+c = alt.layer(*layers).resolve_scale(
     color='independent',
     shape='independent'
 )

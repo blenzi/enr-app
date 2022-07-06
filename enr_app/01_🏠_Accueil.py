@@ -43,6 +43,6 @@ if n_installations:
     gjson.add_to(map)
     folium_static(map)
 
-    columns = ['nominstallation', 'date_inst', 'puiss_MW', 'typo', 'NOM_EPCI', 'NOM_DEP', 'NOM_REG']
+    columns = ['nominstallation', 'Filière', 'typo', 'date_inst', 'puiss_MW', 'energie_GWh', 'NOM_EPCI', 'NOM_DEP', 'NOM_REG']
     st.dataframe(installations[columns])
 st.write(f'Installations: {n_installations}')
