@@ -32,20 +32,24 @@ def load_installations():
 
 @st.cache
 def load_indicateurs():
-    indicateurs = pd.read_csv('data/Enedis_com_a_reg_all.csv', index_col=0)\
-        .merge(zones, on=['TypeZone', 'CodeZone'])\
-        .pivot_table(
-            index=['TypeZone', 'Zone', 'Filiere.de.production', 'annee'],
-            values='valeur',
-            columns='indicateur')
+    Enedis = pd.read_csv('data/Enedis_com_a_reg_all.csv', index_col=0) \
+        .merge(zones, on=['TypeZone', 'CodeZone'])
 
-    indicateurs = pd.concat(
-        [indicateurs.reset_index(),
-         indicateurs.loc['Régions'].reset_index().groupby(
-             ['Filiere.de.production', 'annee']).sum().reset_index().assign(TypeZone='Régions', Zone='Toutes')
-         #      indicateurs.reset_index().replace('Pays de la Loire', 'Toutes').query('TypeZone == "Régions" and Zone == "Toutes"')
-         ]
-    ).set_index(['TypeZone', 'Zone', 'Filiere.de.production', 'annee'])
+    sdes = pd.read_csv('data/SDES_indicateurs_depts_regions_France.csv') \
+        .set_index('Zone').drop('Total DOM').reset_index() \
+        .replace({'Total France': 'Toutes', 'Somme': 'Régions'}).assign(type_estimation='SDES')
+
+    France = Enedis.query("TypeZone == 'Régions'") \
+        .groupby(['indicateur', 'Filiere.de.production', 'annee']).sum().reset_index() \
+        .assign(TypeZone='Régions', Zone='Toutes', type_estimation='Somme')
+
+    indicateurs = pd.concat([Enedis, France, sdes]) \
+        .drop_duplicates(['TypeZone', 'Zone', 'annee', 'Filiere.de.production', 'indicateur'], keep='last') \
+        .pivot_table(
+        index=['TypeZone', 'Zone', 'Filiere.de.production', 'annee'],
+        values='valeur',
+        columns='indicateur')
+
     return indicateurs
 
 filieres = load_indicateurs().index.get_level_values('Filiere.de.production').unique().to_list()
