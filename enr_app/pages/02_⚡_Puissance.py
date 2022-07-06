@@ -7,8 +7,7 @@ filieres = select_filieres()
 
 st.write("# Puissance maximum")
 st.write(f'Zone: {zone}')
-st.write(f'Filières: {st.session_state["filieres"]}')
-st.write(f'Filières sélectionnées: {filieres}')
+st.write(f'Filières sélectionnées: {", ".join(filieres)}')
 
 df = select_indicateur(type_zone, zone, filiere=filieres, indicateur='Puissance.totale.en.kW')\
   .reset_index()\
