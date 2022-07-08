@@ -2,7 +2,8 @@ import streamlit as st
 import folium
 from streamlit_folium import folium_static
 from enr_app.general import select_zone, select_filieres, select_installations, select_indicateur, \
-    get_zoom, get_sources, get_colors, remove_page_items
+    get_sources, get_colors, remove_page_items
+from enr_app.map_functions import get_map
 
 st.set_page_config('Outil EnR')
 remove_page_items()
@@ -37,37 +38,38 @@ col3.caption(f'Source: {get_sources("nombre", type_zone)}')
 
 st.markdown(f"## Installations en France métropolitaine et départements d'outre-mer")
 st.write(f'### {type_zone.strip("s")}: {zone}')
-installations = select_installations(type_zone, zone, filieres)
-n_installations = len(installations)
 
-# FIXME: median -> mean after filtering on metropole ?
-if n_installations:
-    subset = installations.iloc[:1000]  # TODO: remove limitation
-    if n_installations > 1000:
-        st.write('N.B.: uniquement 1000 installations affichées. Veuillez sélectionner une zone plus restreinte')
-    ign = 'https://wxs.ign.fr/essentiels/geoportail/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/png&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}' # noqa
-    map = folium.Map(tiles=ign,
-                     attr='<a target="_blank" href="https://www.geoportail.gouv.fr/">Geoportail France</a>',
-                     min_zoom=2,
-                     max_zoom=18,
-                     location=[installations.geometry.y.median(), installations.geometry.x.median()],
-                     zoom_start=get_zoom(type_zone, zone)
-                     )
-    columns = ['nominstallation', 'Filière', 'typo', 'date_inst', 'puiss_MW', 'energie_GWh', 'NOM_EPCI', 'NOM_DEP',
-               'NOM_REG']
-    tooltip = folium.GeoJsonTooltip(['nominstallation', 'Filière'])
-    popup = folium.GeoJsonPopup(columns)
-    # FIXME: marker color not changed
-    for (name, group), color in zip(subset.groupby('Filière'), get_colors()):
+if type_zone != 'Régions':
+    st.session_state['show_installations'] = True
+
+st.session_state['show_installations'] = st.checkbox('Afficher installations',
+                                                     st.session_state.get('show_installations', False))
+
+mapa = get_map(type_zone, zone)
+if st.session_state['show_installations']:
+    columns = ['nominstallation', 'Filière', 'typo', 'date_inst', 'puiss_MW', 'energie_GWh',
+               'NOM_EPCI', 'NOM_DEP', 'NOM_REG']
+    installations = select_installations(type_zone, zone, filieres)
+    mapa.location = [installations.geometry.y.median(), installations.geometry.x.median()]
+    n_installations = len(installations)
+    subset = installations.iloc[:1000]  # TODO: remove limitation ?
+    if n_installations:
+        if n_installations > 1000:
+            st.write('N.B.: uniquement 1000 installations affichées. Veuillez sélectionner une zone plus restreinte')
         tooltip = folium.GeoJsonTooltip(['nominstallation', 'Filière'])
         popup = folium.GeoJsonPopup(columns)
-        gjson = folium.GeoJson(subset, name=name, tooltip=tooltip, popup=popup,
-                               style_function=lambda x: {'fillColor': color, 'color': color})
-        gjson.add_to(map)
-    folium_static(map)
+        # FIXME: marker color not changed
+        for (name, group), color in zip(subset.groupby('Filière'), get_colors()):
+            tooltip = folium.GeoJsonTooltip(['nominstallation', 'Filière'])
+            popup = folium.GeoJsonPopup(columns)
+            gjson = folium.GeoJson(subset, name=name, tooltip=tooltip, popup=popup,
+                                   style_function=lambda x: {'fillColor': color, 'color': color})
+            gjson.add_to(mapa)
+
+folium_static(mapa)
+if st.session_state['show_installations']:
     st.caption(f'Source: {get_sources("installations", type_zone)}')
 
     st.dataframe(installations[columns])
     st.caption(f'Source: {get_sources("installations", type_zone)}')
-
-st.write(f'Installations: {n_installations}')
+    st.write(f'Installations: {n_installations}')

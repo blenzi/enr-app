@@ -14,19 +14,19 @@ epci_default = 'Tous'
 # N.B.: il faut que ce soit en ordre alphabétique pour que les couleurs et markers correspondent
 filieres = ['Eolien', 'Injection de biométhane', 'Méthanisation électrique', 'Photovoltaïque']
 sources = {
-    'ODRE': 'ODRE [[1]](https://odre.opendatasoft.com/explore/dataset/registre-national-installation-production-stockage-electricite-agrege-311220/information/?disjunctive.epci&disjunctive.departement&disjunctive.region&disjunctive.filiere&disjunctive.combustible&disjunctive.combustiblessecondaires&disjunctive.technologie&disjunctive.regime&disjunctive.gestionnaire) [[2]](https://odre.opendatasoft.com/explore/dataset/points-dinjection-de-biomethane-en-france/information/?disjunctive.site&disjunctive.nom_epci&disjunctive.departement&disjunctive.region&disjunctive.type_de_reseau&disjunctive.grx_demandeur) [[3]](https://opendata.reseaux-energies.fr/explore/dataset/injection-annuelle-biomethane-pitp-grtgaz)',  #noqa
+    'ODRE': 'ODRE [[1]](https://odre.opendatasoft.com/explore/dataset/registre-national-installation-production-stockage-electricite-agrege-311220/information/?disjunctive.epci&disjunctive.departement&disjunctive.region&disjunctive.filiere&disjunctive.combustible&disjunctive.combustiblessecondaires&disjunctive.technologie&disjunctive.regime&disjunctive.gestionnaire) [[2]](https://odre.opendatasoft.com/explore/dataset/points-dinjection-de-biomethane-en-france/information/?disjunctive.site&disjunctive.nom_epci&disjunctive.departement&disjunctive.region&disjunctive.type_de_reseau&disjunctive.grx_demandeur) [[3]](https://opendata.reseaux-energies.fr/explore/dataset/injection-annuelle-biomethane-pitp-grtgaz)',  # noqa: E501
     'GDRF': '[GRDF](https://opendata.grdf.fr/explore/dataset/capacite-et-quantite-dinjection-de-biomethane)',
-    'SDES': 'SDES [[1]](https://www.statistiques.developpement-durable.gouv.fr/tableau-de-bord-solaire-photovoltaique-quatrieme-trimestre-2021?rubrique=21&dossier=172) [[2]](https://www.statistiques.developpement-durable.gouv.fr/tableau-de-bord-solaire-photovoltaique-quatrieme-trimestre-2021?rubrique=21&dossier=172)',  #noqa
+    'SDES': 'SDES [[1]](https://www.statistiques.developpement-durable.gouv.fr/tableau-de-bord-solaire-photovoltaique-quatrieme-trimestre-2021?rubrique=21&dossier=172) [[2]](https://www.statistiques.developpement-durable.gouv.fr/tableau-de-bord-solaire-photovoltaique-quatrieme-trimestre-2021?rubrique=21&dossier=172)',  # noqa: E501
 }
 
-def get_sources(indicateur, type_zone, zone=None):
+
+def get_sources(indicateur, type_zone):
     """
     Sources des indicateurs et installations
 
     Args:
         indicateur: str ("installations", "puissance", "production", "nombre")
         type_zone: str (Régions, Départements ou Epci)
-        zone: str, default=None
 
     Returns: string
     """
@@ -35,6 +35,7 @@ def get_sources(indicateur, type_zone, zone=None):
     if indicateur in ("puissance", "nombre"):
         return sources["SDES"] if type_zone in ("Régions", "Départements") else f"{sources['ODRE']}, {sources['GDRF']}"
     raise ValueError(f"Indicateur pas connu: {indicateur}")
+
 
 def remove_page_items(menu=True, footer=True):
     """
@@ -51,6 +52,7 @@ def remove_page_items(menu=True, footer=True):
     if footer:
         st.markdown(""" <style> footer {visibility: hidden;} </style> """, unsafe_allow_html=True)
 
+
 @st.cache
 def load_zones():  # FIXME
     regions = pd.read_json('https://geo.api.gouv.fr/regions').rename(columns={'nom': 'Zone', 'code': 'CodeZone'})
@@ -58,7 +60,8 @@ def load_zones():  # FIXME
         .rename(columns={'nom': 'Zone', 'code': 'CodeZone'})\
         .merge(regions.rename(columns={'Zone': 'Region', 'CodeZone': 'codeRegion'}), on='codeRegion')
     epcis = pd.read_csv('data/epcis.csv')\
-        .merge(departements.rename(columns={'Zone': 'Departement'}), left_on='DEPARTEMENTS_DE_L_EPCI', right_on='CodeZone')\
+        .merge(departements.rename(columns={'Zone': 'Departement'}),
+               left_on='DEPARTEMENTS_DE_L_EPCI', right_on='CodeZone')\
         .drop(columns=['CodeZone', 'DEPARTEMENTS_DE_L_EPCI'])\
         .rename(columns={'EPCI': 'CodeZone', 'NOM_EPCI': 'Zone'})
     zones = pd.concat([regions, departements, epcis], keys=['Régions', 'Départements', 'Epci']) \
@@ -66,6 +69,7 @@ def load_zones():  # FIXME
         .drop(columns=['level_1', 'codeRegion'])\
         .sort_values(['TypeZone', 'Zone'])
     return zones
+
 
 @st.cache
 def load_installations():
@@ -81,6 +85,7 @@ def load_installations():
     inst = pd.concat([installations, load_installations_biogaz()])
     return inst[~inst.geometry.is_empty]
 
+
 @st.cache
 def load_installations_biogaz():
     return gpd.read_file('data/installations.gpkg', layer='installations_biogaz')\
@@ -93,6 +98,7 @@ def load_installations_biogaz():
                 puiss_MW=lambda x: x['capacite_de_production_gwh_an'] / (365 * 24) * 1e3,
                 energie_GWh=lambda x: x['prod_MWh_an'] * 1e-3
                 )
+
 
 @st.cache
 def load_indicateurs():
@@ -122,6 +128,7 @@ def load_indicateurs():
 
     return pd.concat([indicateurs, *get_indicateurs_biogaz()])
 
+
 @st.cache
 def get_indicateurs_biogaz():
     """
@@ -141,13 +148,13 @@ def get_indicateurs_biogaz():
         puiss_MW=("puiss_MW", 'sum'),
         energie_GWh=("energie_GWh", 'sum'),
         N=("puiss_MW", 'count')
-    ).reset_index().rename(columns={'N': 'Nombre de sites', column: 'Zone'}) \
+    ).reset_index().rename(columns={'N': 'Nombre de sites', column: 'Zone'})
                .assign(TypeZone=type_zone)
            for type_zone, column in {'Epci': 'NOM_EPCI', 'Départements': 'NOM_DEP', 'Régions': 'NOM_REG'}.items()]
 
     return [df.assign(annee=2020, Filière='Injection de biométhane')
-              .set_index(['TypeZone', 'Zone', 'Filière', 'annee'])
-               for df in [France] + ind]
+              .set_index(['TypeZone', 'Zone', 'Filière', 'annee']) for df in [France] + ind]
+
 
 def select_zone():
     """
@@ -168,8 +175,8 @@ def select_zone():
 
     # Restreint les départements et EPCIs à la région / département choisi
     reg = st.session_state['region'] if st.session_state['region'] != region_default else slice(None)
-    liste_departements = [departement_default] + \
-                         load_zones().set_index(['TypeZone', 'Region']).loc[('Départements', reg), 'Zone'].to_list()
+    liste_departements = load_zones().set_index(['TypeZone', 'Region']).loc[('Départements', reg), 'Zone'].to_list()
+    liste_departements = [departement_default] + liste_departements
     index = liste_departements.index(st.session_state['departement']) if 'department' in st.session_state else 0
     st.session_state['departement'] = st.sidebar.selectbox('Département', liste_departements,
                                                            index,
@@ -197,6 +204,7 @@ def select_zone():
         st.session_state['Zone'] = st.session_state['region']
     return st.session_state['TypeZone'], st.session_state['Zone']
 
+
 def select_filieres():
     """
     Sélectionne les filières à considérer avec une checkbox par filière
@@ -208,6 +216,7 @@ def select_filieres():
         st.session_state['filieres'] = {x: True for x in filieres}
     st.session_state['filieres'] = {k: st.sidebar.checkbox(k, v) for k, v in st.session_state['filieres'].items()}
     return [k for k, v in st.session_state['filieres'].items() if v]
+
 
 def select_installations(type_zone, zone, filiere=None):
     """
@@ -230,6 +239,7 @@ def select_installations(type_zone, zone, filiere=None):
         return installations.loc[installations['Filière'].isin(filiere)]
     return installations
 
+
 def select_indicateur(type_zone, zone, filiere=slice(None), annee=slice(None), indicateur=slice(None)):
     """
     Sélectionne un ou plusieurs indicateurs
@@ -246,6 +256,7 @@ def select_indicateur(type_zone, zone, filiere=slice(None), annee=slice(None), i
     """
     return load_indicateurs().loc[(type_zone, zone, filiere, annee), indicateur]
 
+
 def get_colors(liste_filieres=None):
     """
     Returns: liste de couleurs à utiliser selon les filières sélectionnées, pour garder la même couleur par filière
@@ -256,6 +267,7 @@ def get_colors(liste_filieres=None):
         else {fil: fil in liste_filieres for fil in filieres}
     return [x for fil, x in zip(filieres, colors) if d.get(fil)]
 
+
 def get_markers(liste_filieres=None):
     """
     Returns: liste de symboles à utiliser selon les filières sélectionnées, pour garder le même symbole par filière
@@ -265,21 +277,3 @@ def get_markers(liste_filieres=None):
     d = st.session_state['filieres'] if liste_filieres is None \
         else {fil: fil in liste_filieres for fil in filieres}
     return [x for fil, x in zip(filieres, markers) if d.get(fil)]
-
-def get_zoom(type_zone, zone):
-    """
-    Retourne le zoom pour la carte, selon le type de zone (EPCI, département, région, toute la France)
-    Args:
-        type_zone: str ('Epci', 'départements', 'régions')
-        zone: str
-
-    Returns:
-
-    """
-    if type_zone == 'Epci':
-        return 8
-    elif type_zone == 'Départements':
-        return 7
-    elif zone != region_default:
-        return 6
-    return 5

@@ -50,7 +50,7 @@ if add_sraddet:
         color=alt.Color('Filière', scale=alt.Scale(range=get_colors(df)), legend=None),
         shape=alt.Shape('Filière', scale=alt.Scale(range=get_markers(df)), legend=None),
     )
-    layers.extend([line_sraddet]) #, points_sraddet])
+    layers.extend([line_sraddet])  # , points_sraddet])
 
 c = alt.layer(*layers).resolve_scale(
     color='independent',
