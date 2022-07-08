@@ -14,9 +14,27 @@ epci_default = 'Tous'
 # N.B.: il faut que ce soit en ordre alphabétique pour que les couleurs et markers correspondent
 filieres = ['Eolien', 'Injection de biométhane', 'Méthanisation électrique', 'Photovoltaïque']
 sources = {
-    'ODRE': 'ODRE [[1]](https://odre.opendatasoft.com/explore/dataset/registre-national-installation-production-stockage-electricite-agrege-311220/information/?disjunctive.epci&disjunctive.departement&disjunctive.region&disjunctive.filiere&disjunctive.combustible&disjunctive.combustiblessecondaires&disjunctive.technologie&disjunctive.regime&disjunctive.gestionnaire) [[2]](https://odre.opendatasoft.com/explore/dataset/points-dinjection-de-biomethane-en-france/information/?disjunctive.site&disjunctive.nom_epci&disjunctive.departement&disjunctive.region&disjunctive.type_de_reseau&disjunctive.grx_demandeur)',  #noqa
+    'ODRE': 'ODRE [[1]](https://odre.opendatasoft.com/explore/dataset/registre-national-installation-production-stockage-electricite-agrege-311220/information/?disjunctive.epci&disjunctive.departement&disjunctive.region&disjunctive.filiere&disjunctive.combustible&disjunctive.combustiblessecondaires&disjunctive.technologie&disjunctive.regime&disjunctive.gestionnaire) [[2]](https://odre.opendatasoft.com/explore/dataset/points-dinjection-de-biomethane-en-france/information/?disjunctive.site&disjunctive.nom_epci&disjunctive.departement&disjunctive.region&disjunctive.type_de_reseau&disjunctive.grx_demandeur) [[3]](https://opendata.reseaux-energies.fr/explore/dataset/injection-annuelle-biomethane-pitp-grtgaz)',  #noqa
+    'GDRF': '[GRDF](https://opendata.grdf.fr/explore/dataset/capacite-et-quantite-dinjection-de-biomethane)',
     'SDES': 'SDES [[1]](https://www.statistiques.developpement-durable.gouv.fr/tableau-de-bord-solaire-photovoltaique-quatrieme-trimestre-2021?rubrique=21&dossier=172) [[2]](https://www.statistiques.developpement-durable.gouv.fr/tableau-de-bord-solaire-photovoltaique-quatrieme-trimestre-2021?rubrique=21&dossier=172)',  #noqa
 }
+
+def get_sources(indicateur, type_zone, zone=None):
+    """
+    Sources des indicateurs et installations
+
+    Args:
+        indicateur: str ("installations", "puissance", "production", "nombre")
+        type_zone: str (Régions, Départements ou Epci)
+        zone: str, default=None
+
+    Returns: string
+    """
+    if indicateur in ("installations", "production"):
+        return f"{sources['ODRE']}, {sources['GDRF']}"
+    if indicateur in ("puissance", "nombre"):
+        return sources["SDES"] if type_zone in ("Régions", "Départements") else f"{sources['ODRE']}, {sources['GDRF']}"
+    raise ValueError(f"Indicateur pas connu: {indicateur}")
 
 def remove_page_items(menu=True, footer=True):
     """

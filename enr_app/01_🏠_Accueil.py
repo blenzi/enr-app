@@ -1,8 +1,8 @@
 import streamlit as st
 import folium
 from streamlit_folium import folium_static
-from enr_app.general import select_zone, select_filieres, select_installations, select_indicateur, get_zoom, sources, \
-    remove_page_items
+from enr_app.general import select_zone, select_filieres, select_installations, select_indicateur, \
+    get_zoom, get_sources, remove_page_items
 
 st.set_page_config('Outil EnR')
 remove_page_items()
@@ -30,11 +30,11 @@ except KeyError:
 
 col1, col2, col3 = st.columns(3)
 col1.metric(f'Puissance maximum installée en {annee}', f'{puissance} MW')
-col1.caption(f'Source: {sources["SDES" if type_zone in ("Régions", "Départements") else "ODRE"]}')
+col1.caption(f'Source: {get_sources("puissance", type_zone)}')
 col2.metric(f'Énergie produite en {annee}', f'{energie} GWh')
-col2.caption(f'Source: {sources["ODRE"]}')
+col2.caption(f'Source: {get_sources("production", type_zone)}')
 col3.metric(f'Nombre de sites en {annee}', nombre)
-col3.caption(f'Source: {sources["SDES" if type_zone in ("Régions", "Départements") else "ODRE"]}')
+col3.caption(f'Source: {get_sources("nombre", type_zone)}')
 
 
 st.markdown(f"### Installations en France métropolitaine et départements d'outre-mer: {st.session_state['Zone']}")
@@ -61,6 +61,7 @@ if n_installations:
     gjson = folium.GeoJson(subset, tooltip=tooltip, popup=popup, name="Installations")
     gjson.add_to(map)
     folium_static(map)
-    st.caption(f'Source: {sources["ODRE"]}')
+    st.caption(f'Source: {get_sources("installations", type_zone)}')
     st.dataframe(installations[columns])
+    st.caption(f'Source: {get_sources("installations", type_zone)}')
 st.write(f'Installations: {n_installations}')

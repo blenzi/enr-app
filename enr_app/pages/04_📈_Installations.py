@@ -1,6 +1,7 @@
 import altair as alt
 import streamlit as st
-from enr_app.general import select_zone, select_filieres, select_indicateur, get_colors, sources, remove_page_items
+from enr_app.general import select_zone, select_filieres, select_indicateur, \
+  get_colors, get_sources, remove_page_items
 
 remove_page_items()
 type_zone, zone = select_zone()
@@ -21,5 +22,6 @@ c = alt.Chart(df, width=600).mark_bar().encode(
 )
 
 st.altair_chart(c)
-st.caption(f'Source: {sources["SDES" if type_zone in ("Régions", "Départements") else "ODRE"]}')
+st.caption(f'Source: {get_sources("nombre", type_zone)}')
 st.dataframe(df, width=600)
+st.caption(f'Source: {get_sources("nombre", type_zone)}')
