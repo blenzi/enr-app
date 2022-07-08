@@ -76,7 +76,7 @@ def load_installations():
                }
 
     installations = gpd.read_file('data/installations.gpkg', layer='installations').to_crs(epsg=4326)\
-        .assign(Filière=lambda x: x['typo'].replace(filiere) )
+        .assign(Filière=lambda x: x['typo'].replace(filiere), energie_GWh=lambda x: x['prod_MWh_an'] * 1e-3)
 
     inst = pd.concat([installations, load_installations_biogaz()])
     return inst[~inst.geometry.is_empty]
