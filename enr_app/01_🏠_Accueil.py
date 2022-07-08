@@ -2,13 +2,11 @@ import streamlit as st
 import folium
 from streamlit_folium import folium_static
 from enr_app.general import select_zone, select_filieres, select_installations, select_indicateur, \
-    get_zoom, get_sources, remove_page_items
+    get_zoom, get_sources, get_colors, remove_page_items
 
 st.set_page_config('Outil EnR')
 remove_page_items()
 st.write("# Bienvenu à l'outil EnR")
-
-
 
 type_zone, zone = select_zone()
 filieres = select_filieres()
@@ -37,7 +35,8 @@ col3.metric(f'Nombre de sites en {annee}', nombre)
 col3.caption(f'Source: {get_sources("nombre", type_zone)}')
 
 
-st.markdown(f"### Installations en France métropolitaine et départements d'outre-mer: {st.session_state['Zone']}")
+st.markdown(f"## Installations en France métropolitaine et départements d'outre-mer")
+st.write(f'### {type_zone.strip("s")}: {zone}')
 installations = select_installations(type_zone, zone, filieres)
 n_installations = len(installations)
 
@@ -54,14 +53,21 @@ if n_installations:
                      location=[installations.geometry.y.median(), installations.geometry.x.median()],
                      zoom_start=get_zoom(type_zone, zone)
                      )
-    tooltip = folium.GeoJsonTooltip(['nominstallation', 'Filière'])
     columns = ['nominstallation', 'Filière', 'typo', 'date_inst', 'puiss_MW', 'energie_GWh', 'NOM_EPCI', 'NOM_DEP',
                'NOM_REG']
+    tooltip = folium.GeoJsonTooltip(['nominstallation', 'Filière'])
     popup = folium.GeoJsonPopup(columns)
-    gjson = folium.GeoJson(subset, tooltip=tooltip, popup=popup, name="Installations")
-    gjson.add_to(map)
+    # FIXME: marker color not changed
+    for (name, group), color in zip(subset.groupby('Filière'), get_colors()):
+        tooltip = folium.GeoJsonTooltip(['nominstallation', 'Filière'])
+        popup = folium.GeoJsonPopup(columns)
+        gjson = folium.GeoJson(subset, name=name, tooltip=tooltip, popup=popup,
+                               style_function=lambda x: {'fillColor': color, 'color': color})
+        gjson.add_to(map)
     folium_static(map)
     st.caption(f'Source: {get_sources("installations", type_zone)}')
+
     st.dataframe(installations[columns])
     st.caption(f'Source: {get_sources("installations", type_zone)}')
+
 st.write(f'Installations: {n_installations}')

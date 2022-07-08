@@ -8,8 +8,7 @@ type_zone, zone = select_zone()
 filieres = select_filieres()
 
 st.write("# Nombre d'installations")
-st.write(f'Zone: {zone}')
-st.write(f'Filières sélectionnées: {", ".join(filieres)}')
+st.write(f'### {type_zone.strip("s")}: {zone}')
 
 df = select_indicateur(type_zone, zone, filiere=filieres, indicateur='Nombre de sites')\
   .reset_index()\

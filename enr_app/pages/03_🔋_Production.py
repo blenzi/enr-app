@@ -9,8 +9,7 @@ type_zone, zone = select_zone()
 filieres = select_filieres()
 
 st.write("# Production")
-st.write(f'Zone: {zone}')
-st.write(f'Filières sélectionnées: {", ".join(filieres)}')
+st.write(f'### {type_zone.strip("s")}: {zone}')
 
 add_sraddet = False
 df = select_indicateur(type_zone, zone, filiere=filieres, indicateur='energie_GWh')\
