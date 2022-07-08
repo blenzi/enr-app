@@ -43,7 +43,7 @@ n_installations = len(installations)
 if n_installations:
     subset = installations.iloc[:1000]  # TODO: remove limitation
     if n_installations > 1000:
-        st.write('N.B.: uniquement 1000 installations affichées')
+        st.write('N.B.: uniquement 1000 installations affichées. Veuillez sélectionner une zone plus restreinte')
     ign = 'https://wxs.ign.fr/essentiels/geoportail/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/png&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}' # noqa
     map = folium.Map(tiles=ign,
                      attr='<a target="_blank" href="https://www.geoportail.gouv.fr/">Geoportail France</a>',
@@ -52,12 +52,13 @@ if n_installations:
                      location=[installations.geometry.y.median(), installations.geometry.x.median()],
                      zoom_start=get_zoom(type_zone, zone)
                      )
-    tooltip = folium.GeoJsonTooltip(['nominstallation', 'typo'])
-    gjson = folium.GeoJson(subset, tooltip=tooltip, name="Installations")
+    tooltip = folium.GeoJsonTooltip(['nominstallation', 'Filière'])
+    columns = ['nominstallation', 'Filière', 'typo', 'date_inst', 'puiss_MW', 'energie_GWh', 'NOM_EPCI', 'NOM_DEP',
+               'NOM_REG']
+    popup = folium.GeoJsonPopup(columns)
+    gjson = folium.GeoJson(subset, tooltip=tooltip, popup=popup, name="Installations")
     gjson.add_to(map)
     folium_static(map)
     st.caption(f'Source: {sources["ODRE"]}')
-
-    columns = ['nominstallation', 'Filière', 'typo', 'date_inst', 'puiss_MW', 'energie_GWh', 'NOM_EPCI', 'NOM_DEP', 'NOM_REG']
     st.dataframe(installations[columns])
 st.write(f'Installations: {n_installations}')
