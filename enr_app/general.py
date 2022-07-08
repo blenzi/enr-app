@@ -18,17 +18,20 @@ sources = {
     'SDES': 'SDES [[1]](https://www.statistiques.developpement-durable.gouv.fr/tableau-de-bord-solaire-photovoltaique-quatrieme-trimestre-2021?rubrique=21&dossier=172) [[2]](https://www.statistiques.developpement-durable.gouv.fr/tableau-de-bord-solaire-photovoltaique-quatrieme-trimestre-2021?rubrique=21&dossier=172)',  #noqa
 }
 
-def remove_menu():
+def remove_page_items(menu=True, footer=True):
     """
-    Hack to remove hamburger menu ()
-    """
-    hide_menu_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            </style>
-            """
-    st.markdown(hide_menu_style, unsafe_allow_html=True)
+    Remove main menu and footer
 
+    Args:
+        menu (bool, default=True): remove hamburger menu
+        footer (bool, default=True): remove footer "Made with Streamlit"
+
+    Returns: None
+    """
+    if menu:
+        st.markdown(""" <style> #MainMenu {visibility: hidden;} </style> """, unsafe_allow_html=True)
+    if footer:
+        st.markdown(""" <style> footer {visibility: hidden;} </style> """, unsafe_allow_html=True)
 
 @st.cache
 def load_zones():  # FIXME
@@ -45,9 +48,6 @@ def load_zones():  # FIXME
         .drop(columns=['level_1', 'codeRegion'])\
         .sort_values(['TypeZone', 'Zone'])
     return zones
-
-
-zones = load_zones()
 
 @st.cache
 def load_installations():
@@ -79,7 +79,7 @@ def load_installations_biogaz():
 @st.cache
 def load_indicateurs():
     Enedis = pd.read_csv('data/Enedis_com_a_reg_all.csv', index_col=0) \
-        .merge(zones, on=['TypeZone', 'CodeZone']) \
+        .merge(load_zones(), on=['TypeZone', 'CodeZone']) \
         .rename(columns={'Filiere.de.production': 'Filière'}) \
         .replace({'Bio Energie': 'Méthanisation électrique'})
 
@@ -131,8 +131,6 @@ def get_indicateurs_biogaz():
               .set_index(['TypeZone', 'Zone', 'Filière', 'annee'])
                for df in [France] + ind]
 
-liste_regions = [region_default] + zones.set_index('TypeZone').loc['Régions', 'Zone'].to_list()
-
 def select_zone():
     """
     Sélectionne le territoire (région, département, EPCI) à travers 3 menus déroulants
@@ -146,13 +144,14 @@ def select_zone():
     def on_change_department():
         st.session_state['EPCI'] = epci_default
 
+    liste_regions = [region_default] + load_zones().set_index('TypeZone').loc['Régions', 'Zone'].to_list()
     index = liste_regions.index(st.session_state['region']) if 'region' in st.session_state else 0
     st.session_state['region'] = st.sidebar.selectbox('Région', liste_regions, index, on_change=on_change_region)
 
     # Restreint les départements et EPCIs à la région / département choisi
     reg = st.session_state['region'] if st.session_state['region'] != region_default else slice(None)
     liste_departements = [departement_default] + \
-                         zones.set_index(['TypeZone', 'Region']).loc[('Départements', reg), 'Zone'].to_list()
+                         load_zones().set_index(['TypeZone', 'Region']).loc[('Départements', reg), 'Zone'].to_list()
     index = liste_departements.index(st.session_state['departement']) if 'department' in st.session_state else 0
     st.session_state['departement'] = st.sidebar.selectbox('Département', liste_departements,
                                                            index,
@@ -160,11 +159,11 @@ def select_zone():
 
     dep = st.session_state['departement'] if st.session_state['departement'] != departement_default else slice(None)
     try:
-        liste_epcis = [epci_default] + zones.set_index(['TypeZone', 'Region', 'Departement'])\
+        liste_epcis = [epci_default] + load_zones().set_index(['TypeZone', 'Region', 'Departement'])\
             .loc[('Epci', reg, dep), 'Zone']\
             .drop_duplicates().to_list()
     except:  # FIXME
-        liste_epcis = [epci_default] + zones.set_index('TypeZone').loc['Epci', 'Zone'].to_list()
+        liste_epcis = [epci_default] + load_zones().set_index('TypeZone').loc['Epci', 'Zone'].to_list()
 
     index = liste_epcis.index(st.session_state['EPCI']) if 'EPCI' in st.session_state else 0
     st.session_state['EPCI'] = st.sidebar.selectbox('EPCI', liste_epcis, index)

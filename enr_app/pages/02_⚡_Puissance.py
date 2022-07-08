@@ -1,7 +1,8 @@
 import altair as alt
 import streamlit as st
-from enr_app.general import select_zone, select_filieres, select_indicateur, get_colors, sources
+from enr_app.general import select_zone, select_filieres, select_indicateur, get_colors, sources, remove_page_items
 
+remove_page_items()
 type_zone, zone = select_zone()
 filieres = select_filieres()
 

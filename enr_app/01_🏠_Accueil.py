@@ -1,11 +1,13 @@
 import streamlit as st
 import folium
 from streamlit_folium import folium_static
-
+from enr_app.general import select_zone, select_filieres, select_installations, select_indicateur, get_zoom, sources, \
+    remove_page_items
 
 st.set_page_config('Outil EnR')
+remove_page_items()
 st.write("# Bienvenu à l'outil EnR")
-from enr_app.general import select_zone, select_filieres, select_installations, select_indicateur, get_zoom, sources
+
 
 
 type_zone, zone = select_zone()
