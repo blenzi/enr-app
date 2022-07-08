@@ -1,7 +1,7 @@
 import altair as alt
 import streamlit as st
 import pandas as pd
-from enr_app.general import select_zone, select_filieres, select_indicateur, get_colors, get_markers
+from enr_app.general import select_zone, select_filieres, select_indicateur, get_colors, get_markers, sources
 
 type_zone, zone = select_zone()
 filieres = select_filieres()
@@ -57,4 +57,5 @@ c = alt.layer(*layers).resolve_scale(
 )
 
 st.altair_chart(c)
+st.caption(f'Source: {sources["ODRE"]}')
 st.dataframe(df)

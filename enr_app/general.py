@@ -13,6 +13,10 @@ epci_default = 'Tous'
 # TODO: récupérer depuis fichier avec données
 # N.B.: il faut que ce soit en ordre alphabétique pour que les couleurs et markers correspondent
 filieres = ['Eolien', 'Injection de biométhane', 'Méthanisation électrique', 'Photovoltaïque']
+sources = {
+    'ODRE': 'ODRE [[1]](https://odre.opendatasoft.com/explore/dataset/registre-national-installation-production-stockage-electricite-agrege-311220/information/?disjunctive.epci&disjunctive.departement&disjunctive.region&disjunctive.filiere&disjunctive.combustible&disjunctive.combustiblessecondaires&disjunctive.technologie&disjunctive.regime&disjunctive.gestionnaire) [[2]](https://odre.opendatasoft.com/explore/dataset/points-dinjection-de-biomethane-en-france/information/?disjunctive.site&disjunctive.nom_epci&disjunctive.departement&disjunctive.region&disjunctive.type_de_reseau&disjunctive.grx_demandeur)',  #noqa
+    'SDES': 'SDES [[1]](https://www.statistiques.developpement-durable.gouv.fr/tableau-de-bord-solaire-photovoltaique-quatrieme-trimestre-2021?rubrique=21&dossier=172) [[2]](https://www.statistiques.developpement-durable.gouv.fr/tableau-de-bord-solaire-photovoltaique-quatrieme-trimestre-2021?rubrique=21&dossier=172)',  #noqa
+}
 
 def remove_menu():
     """
