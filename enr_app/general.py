@@ -14,6 +14,18 @@ epci_default = 'Tous'
 # N.B.: il faut que ce soit en ordre alphabétique pour que les couleurs et markers correspondent
 filieres = ['Eolien', 'Injection de biométhane', 'Méthanisation électrique', 'Photovoltaïque']
 
+def remove_menu():
+    """
+    Hack to remove hamburger menu ()
+    """
+    hide_menu_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            </style>
+            """
+    st.markdown(hide_menu_style, unsafe_allow_html=True)
+
+
 @st.cache
 def load_zones():  # FIXME
     regions = pd.read_json('https://geo.api.gouv.fr/regions').rename(columns={'nom': 'Zone', 'code': 'CodeZone'})
@@ -232,3 +244,21 @@ def get_markers(liste_filieres=None):
     d = st.session_state['filieres'] if liste_filieres is None \
         else {fil: fil in liste_filieres for fil in filieres}
     return [x for fil, x in zip(filieres, markers) if d.get(fil)]
+
+def get_zoom(type_zone, zone):
+    """
+    Retourne le zoom pour la carte, selon le type de zone (EPCI, département, région, toute la France)
+    Args:
+        type_zone: str ('Epci', 'départements', 'régions')
+        zone: str
+
+    Returns:
+
+    """
+    if type_zone == 'Epci':
+        return 8
+    elif type_zone == 'Départements':
+        return 7
+    elif zone != region_default:
+        return 6
+    return 5

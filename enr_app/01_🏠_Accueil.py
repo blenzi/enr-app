@@ -1,13 +1,15 @@
 import streamlit as st
-from enr_app.general import select_zone, select_filieres, select_installations, select_indicateur
 import folium
 from streamlit_folium import folium_static
 
 
+st.set_page_config('Outil EnR')
+st.write("# Bienvenu à l'outil EnR")
+from enr_app.general import select_zone, select_filieres, select_installations, select_indicateur, get_zoom
+
+
 type_zone, zone = select_zone()
 filieres = select_filieres()
-
-st.write("# Bienvenu à l'outil EnR")
 
 annee = 2020
 try:
@@ -37,7 +39,14 @@ n_installations = len(installations)
 # FIXME: median -> mean after filtering on metropole ?
 if n_installations:
     subset = installations.iloc[:1000]  # TODO: remove limitation
-    map = folium.Map(location=[installations.geometry.y.median(), installations.geometry.x.median()], zoom_start=5)
+    ign = 'https://wxs.ign.fr/essentiels/geoportail/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/png&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}' # noqa
+    map = folium.Map(tiles=ign,
+                     attr='<a target="_blank" href="https://www.geoportail.gouv.fr/">Geoportail France</a>',
+                     min_zoom=2,
+                     max_zoom=18,
+                     location=[installations.geometry.y.median(), installations.geometry.x.median()],
+                     zoom_start=get_zoom(type_zone, zone)
+                     )
     tooltip = folium.GeoJsonTooltip(['nominstallation', 'typo'])
     gjson = folium.GeoJson(subset, tooltip=tooltip, name="Installations")
     gjson.add_to(map)
