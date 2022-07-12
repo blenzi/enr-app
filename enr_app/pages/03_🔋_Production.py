@@ -11,8 +11,9 @@ filieres = select_filieres()
 st.write("# Production")
 st.write(f'### {type_zone.strip("s")}: {zone}')
 
+indicateur = "energie_GWh"
 add_sraddet = False
-df = select_indicateur(type_zone, zone, filiere=filieres, indicateur='energie_GWh')\
+df = select_indicateur(type_zone, zone, filiere=filieres, indicateur=indicateur)\
   .reset_index()\
   .rename(columns={'energie_GWh': 'Énergie produite (GWh)'})\
   .drop(columns=['TypeZone', 'Zone'])
@@ -28,7 +29,8 @@ if type_zone == 'Régions' and zone == 'Grand Est' and st.checkbox('Objectifs SR
 line = alt.Chart(df, width=600).mark_line().encode(
     x='annee:O',
     y='Énergie produite (GWh)',
-    color=alt.Color('Filière', scale=alt.Scale(range=get_colors()), legend=None)
+    color=alt.Color('Filière', scale=alt.Scale(range=get_colors()), legend=None),
+    tooltip=['annee', 'Filière', 'Énergie produite (GWh)']
 )
 
 points = line.mark_point(filled=True).encode(
@@ -43,7 +45,8 @@ if add_sraddet:
     line_sraddet = line.mark_line(strokeDash=[1.], point=True).encode(
         x='annee:O',
         y='Objectif',
-        color=alt.Color('Filière', scale=alt.Scale(range=get_colors()), legend=None)
+        color=alt.Color('Filière', scale=alt.Scale(range=get_colors()), legend=None),
+        tooltip=['annee', 'Filière', 'Objectif']
     )
     # FIXME: Colors and markers are wrong because not all Filières are present ?
     points_sraddet = line_sraddet.mark_point(filled=False).encode(
@@ -58,7 +61,7 @@ c = alt.layer(*layers).resolve_scale(
 )
 
 st.altair_chart(c)
-st.caption(f'Source: {get_sources("production", type_zone)}')
+st.caption(f'Source: {get_sources("energie_GWh", type_zone)}')
 
 
 st.download_button('Exporter au format csv',
@@ -67,4 +70,4 @@ st.download_button('Exporter au format csv',
                    mime='text/csv',
                    )
 st.dataframe(df)
-st.caption(f'Source: {get_sources("production", type_zone)}')
+st.caption(f'Source: {get_sources(indicateur, type_zone)}')

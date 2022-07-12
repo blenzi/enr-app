@@ -30,9 +30,9 @@ def get_sources(indicateur, type_zone):
 
     Returns: string
     """
-    if indicateur in ("installations", "production"):
+    if indicateur in ("installations", "energie_GWh"):
         return f"{sources['ODRE']}, {sources['GDRF']}"
-    if indicateur in ("puissance", "nombre"):
+    if indicateur in ("puiss_MW", "Nombre de sites"):
         return sources["SDES"] if type_zone in ("Régions", "Départements") else f"{sources['ODRE']}, {sources['GDRF']}"
     raise ValueError(f"Indicateur pas connu: {indicateur}")
 

@@ -10,18 +10,20 @@ filieres = select_filieres()
 st.write("# Nombre d'installations")
 st.write(f'### {type_zone.strip("s")}: {zone}')
 
-df = select_indicateur(type_zone, zone, filiere=filieres, indicateur='Nombre de sites')\
+indicateur = 'Nombre de sites'
+df = select_indicateur(type_zone, zone, filiere=filieres, indicateur=indicateur)\
   .reset_index()\
-  .drop(columns=['TypeZone', 'Zone']).astype({'Nombre de sites': int})
+  .drop(columns=['TypeZone', 'Zone']).astype({indicateur: int})
 
 c = alt.Chart(df, width=600).mark_bar().encode(
   x='annee:O',
   y='Nombre de sites:Q',
-  color=alt.Color('Filière:N', scale=alt.Scale(range=get_colors()))
+  color=alt.Color('Filière:N', scale=alt.Scale(range=get_colors())),
+  tooltip=['annee', 'Filière', indicateur]
 )
 
 st.altair_chart(c)
-st.caption(f'Source: {get_sources("nombre", type_zone)}')
+st.caption(f'Source: {get_sources(indicateur, type_zone)}')
 
 st.download_button('Exporter au format csv',
                    data=df.to_csv(index=False),
@@ -29,4 +31,4 @@ st.download_button('Exporter au format csv',
                    mime='text/csv',
                    )
 st.dataframe(df, width=600)
-st.caption(f'Source: {get_sources("nombre", type_zone)}')
+st.caption(f'Source: {get_sources(indicateur, type_zone)}')
