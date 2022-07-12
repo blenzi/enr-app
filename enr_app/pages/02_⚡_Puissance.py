@@ -23,5 +23,10 @@ c = alt.Chart(df, width=600).mark_bar().encode(
 st.altair_chart(c)
 st.caption(f'Source: {get_sources("puissance", type_zone)}')
 
+st.download_button('Exporter au format csv',
+                   data=df.to_csv(index=False),
+                   file_name='puissance.csv',
+                   mime='text/csv',
+                   )
 st.dataframe(df, width=600)
 st.caption(f'Source: {get_sources("puissance", type_zone)}')

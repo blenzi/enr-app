@@ -59,5 +59,12 @@ c = alt.layer(*layers).resolve_scale(
 
 st.altair_chart(c)
 st.caption(f'Source: {get_sources("production", type_zone)}')
+
+
+st.download_button('Exporter au format csv',
+                   data=df.to_csv(index=False),
+                   file_name='production.csv',
+                   mime='text/csv',
+                   )
 st.dataframe(df)
 st.caption(f'Source: {get_sources("production", type_zone)}')

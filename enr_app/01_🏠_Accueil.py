@@ -49,7 +49,7 @@ mapa = get_map(type_zone, zone)
 if st.session_state['show_installations']:
     columns = ['nominstallation', 'Filière', 'typo', 'date_inst', 'puiss_MW', 'energie_GWh',
                'NOM_EPCI', 'NOM_DEP', 'NOM_REG']
-    installations = select_installations(type_zone, zone, filieres)
+    installations = select_installations(type_zone, zone, filieres).reset_index()
     mapa.location = [installations.geometry.y.median(), installations.geometry.x.median()]
     n_installations = len(installations)
     subset = installations.iloc[:1000]  # TODO: remove limitation ?
@@ -69,7 +69,11 @@ if st.session_state['show_installations']:
 folium_static(mapa)
 if st.session_state['show_installations']:
     st.caption(f'Source: {get_sources("installations", type_zone)}')
-
+    st.download_button('Exporter au format csv',
+                       data=installations[columns].to_csv(index=False),
+                       file_name='installations.csv',
+                       mime='text/csv',
+    )
     st.dataframe(installations[columns])
     st.caption(f'Source: {get_sources("installations", type_zone)}')
     st.write(f'Installations: {n_installations}')
