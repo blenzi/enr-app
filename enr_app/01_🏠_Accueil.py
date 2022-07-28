@@ -2,7 +2,7 @@ import streamlit as st
 import folium
 from streamlit_folium import folium_static
 from enr_app.general import select_zone, select_filieres, select_installations, select_indicateur, \
-    get_sources, get_colors, remove_page_items
+    get_sources, get_icon_colors, remove_page_items
 from enr_app.map_functions import get_map
 
 st.set_page_config('Outil EnR')
@@ -58,14 +58,14 @@ if st.session_state['show_installations']:
             st.write('N.B.: uniquement 1000 installations affichées. Veuillez sélectionner une zone plus restreinte')
         tooltip = folium.GeoJsonTooltip(['nominstallation', 'Filière'])
         popup = folium.GeoJsonPopup(columns)
-        # FIXME: marker color not changed
-        for (name, group), color in zip(subset.groupby('Filière'), get_colors()):
+        for (name, group), color in zip(subset.groupby('Filière'), get_icon_colors()):
             tooltip = folium.GeoJsonTooltip(['nominstallation', 'Filière'])
             popup = folium.GeoJsonPopup(columns)
-            gjson = folium.GeoJson(subset, name=name, tooltip=tooltip, popup=popup,
-                                   style_function=lambda x: {'fillColor': color, 'color': color})
+            marker = folium.Marker(icon=folium.Icon(color=color))
+            gjson = folium.GeoJson(group, name=name, tooltip=tooltip, popup=popup, marker=marker)
             gjson.add_to(mapa)
 
+folium.LayerControl().add_to(mapa)
 folium_static(mapa)
 if st.session_state['show_installations']:
     st.caption(f'Source: {get_sources("installations", type_zone)}')

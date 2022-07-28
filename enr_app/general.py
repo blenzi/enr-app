@@ -276,6 +276,16 @@ def get_colors(liste_filieres=None):
         else {fil: fil in liste_filieres for fil in filieres}
     return [x for fil, x in zip(filieres, colors) if d.get(fil)]
 
+def get_icon_colors(liste_filieres=None):
+    """
+    Returns: liste de couleurs à utiliser pour les markers selon les filières sélectionnées, pour garder la même couleur par filière
+    """
+    colors = ['blue', 'orange', 'green', 'red', 'purple']
+    d = st.session_state['filieres'] if liste_filieres is None \
+        else {fil: fil in liste_filieres for fil in filieres}
+    return [x for fil, x in zip(filieres, colors) if d.get(fil)]
+
+
 
 def get_markers(liste_filieres=None):
     """
