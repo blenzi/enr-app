@@ -16,7 +16,7 @@ filieres = ['Eolien', 'Injection de biométhane', 'Méthanisation électrique', 
 sources = {
     'ODRE': 'ODRE [[1]](https://odre.opendatasoft.com/explore/dataset/registre-national-installation-production-stockage-electricite-agrege-311220/information/?disjunctive.epci&disjunctive.departement&disjunctive.region&disjunctive.filiere&disjunctive.combustible&disjunctive.combustiblessecondaires&disjunctive.technologie&disjunctive.regime&disjunctive.gestionnaire) [[2]](https://odre.opendatasoft.com/explore/dataset/points-dinjection-de-biomethane-en-france/information/?disjunctive.site&disjunctive.nom_epci&disjunctive.departement&disjunctive.region&disjunctive.type_de_reseau&disjunctive.grx_demandeur) [[3]](https://opendata.reseaux-energies.fr/explore/dataset/injection-annuelle-biomethane-pitp-grtgaz)',  # noqa: E501
     'GDRF': '[GRDF](https://opendata.grdf.fr/explore/dataset/capacite-et-quantite-dinjection-de-biomethane)',
-    'SDES': 'SDES [[1]](https://www.statistiques.developpement-durable.gouv.fr/tableau-de-bord-solaire-photovoltaique-quatrieme-trimestre-2021?rubrique=21&dossier=172) [[2]](https://www.statistiques.developpement-durable.gouv.fr/tableau-de-bord-solaire-photovoltaique-quatrieme-trimestre-2021?rubrique=21&dossier=172)',  # noqa: E501
+    'SDES': 'SDES [[1]](https://www.statistiques.developpement-durable.gouv.fr/tableau-de-bord-solaire-photovoltaique-quatrieme-trimestre-2021?rubrique=21&dossier=172) [[2]](https://www.statistiques.developpement-durable.gouv.fr/tableau-de-bord-eolien-quatrieme-trimestre-2021)',  # noqa: E501
 }
 
 
