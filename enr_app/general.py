@@ -73,87 +73,12 @@ def load_zones():  # FIXME
 
 @st.cache
 def load_installations():
-    filiere = {'solaire photovoltaïque': 'Photovoltaïque', 
-               'éolien terrestre': 'Eolien',
-               'éolien marin': 'Eolien',
-               'méthanisation': 'Méthanisation électrique'
-               }
-
-    installations = gpd.read_file('data/installations.gpkg', layer='installations').to_crs(epsg=4326)\
-        .assign(Filière=lambda x: x['typo'].replace(filiere), energie_GWh=lambda x: x['prod_MWh_an'] * 1e-3)
-
-    inst = pd.concat([installations, load_installations_biogaz()])
-    return inst[~inst.geometry.is_empty]
-
-
-@st.cache
-def load_installations_biogaz():
-    return gpd.read_file('data/installations.gpkg', layer='installations_biogaz')\
-        .to_crs(epsg=4326)\
-        .rename(columns={'nom_du_projet': 'nominstallation',
-                         'date_de_mes': 'date_inst',
-                         'quantite_annuelle_injectee_en_mwh': 'prod_MWh_an',
-                         'type': 'typo'}) \
-        .assign(Filière='Injection de biométhane',
-                puiss_MW=lambda x: x['capacite_de_production_gwh_an'] / (365 * 24) * 1e3,
-                energie_GWh=lambda x: x['prod_MWh_an'] * 1e-3
-                )
+    return gpd.read_file('data/app.gpkg', layer='installations')
 
 
 @st.cache
 def load_indicateurs():
-    Enedis = pd.read_csv('data/Enedis_com_a_reg_all.csv', index_col=0) \
-        .merge(load_zones(), on=['TypeZone', 'CodeZone']) \
-        .rename(columns={'Filiere.de.production': 'Filière'}) \
-        .replace({'Bio Energie': 'Méthanisation électrique'})
-
-    sdes = pd.read_csv('data/SDES_indicateurs_depts_regions_France.csv') \
-        .set_index('Zone').drop('Total DOM').reset_index() \
-        .replace({'Total France': 'Toutes', 'Somme': 'Régions'}) \
-        .rename(columns={'Filiere.de.production': 'Filière'}) \
-        .assign(type_estimation='SDES')
-
-    France = Enedis.query("TypeZone == 'Régions'") \
-        .groupby(['indicateur', 'Filière', 'annee']).sum().reset_index() \
-        .assign(TypeZone='Régions', Zone='Toutes', type_estimation='Somme')
-
-    indicateurs = pd.concat([Enedis, France, sdes]) \
-        .drop_duplicates(['TypeZone', 'Zone', 'annee', 'Filière', 'indicateur'], keep='last') \
-        .pivot_table(index=['TypeZone', 'Zone', 'Filière', 'annee'],
-                     values='valeur', 
-                     columns='indicateur') \
-        .assign(puiss_MW=lambda x: x['Puissance.totale.en.kW'] / 1e3,
-                energie_GWh=lambda x: x['Energie.totale.en.kWh'] / 1e6) \
-        .drop(columns=['Puissance.totale.en.kW', 'Energie.totale.en.kWh'])
-
-    return pd.concat([indicateurs, *get_indicateurs_biogaz()])
-
-
-@st.cache
-def get_indicateurs_biogaz():
-    """
-    Returns: liste de tableaux contenant les indicateurs pour le biogaz aux niveaux des EPCI, départements, régions
-    et toute la France
-    """
-    # FIXME: évolution au cours des années. 2020 c'est peut-être même pas la bonne année
-    installations_biogaz = load_installations_biogaz()
-
-    France = installations_biogaz.agg({'puiss_MW': 'sum', "energie_GWh": 'sum', 'NOM_REG': 'count'}) \
-        .to_frame().T \
-        .assign(Zone=region_default, TypeZone='Régions') \
-        .rename(columns={'NOM_REG': 'Nombre de sites'})
-
-    # Indicateurs aux niveaux EPCI, départements, régions
-    ind = [installations_biogaz.groupby(column).agg(
-        puiss_MW=("puiss_MW", 'sum'),
-        energie_GWh=("energie_GWh", 'sum'),
-        N=("puiss_MW", 'count')
-    ).reset_index().rename(columns={'N': 'Nombre de sites', column: 'Zone'})
-               .assign(TypeZone=type_zone)
-           for type_zone, column in {'Epci': 'NOM_EPCI', 'Départements': 'NOM_DEP', 'Régions': 'NOM_REG'}.items()]
-
-    return [df.assign(annee=2020, Filière='Injection de biométhane')
-              .set_index(['TypeZone', 'Zone', 'Filière', 'annee']) for df in [France] + ind]
+    return pd.read_csv('data/indicateurs.csv').set_index(['TypeZone', 'Zone', 'Filière', 'annee'])
 
 
 def select_zone():
