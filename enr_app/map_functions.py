@@ -8,17 +8,17 @@ from enr_app.general import region_default, load_zones
 
 @st.cache
 def load_contour_regions():
-    return gpd.read_file('data/installations.gpkg', layer='regions').to_crs(epsg=4326)
+    return gpd.read_file('data/app.gpkg', layer='regions').to_crs(epsg=4326)
 
 
 @st.cache
 def load_contour_departements():
-    return gpd.read_file('data/installations.gpkg', layer='departements').to_crs(epsg=4326)
+    return gpd.read_file('data/app.gpkg', layer='departements').to_crs(epsg=4326)
 
 
 @st.cache
 def load_contour_EPCIs():
-    return gpd.read_file('data/installations.gpkg', layer='EPCIs').to_crs(epsg=4326)
+    return gpd.read_file('data/app.gpkg', layer='EPCIs').to_crs(epsg=4326)
 
 
 def get_zoom(type_zone, zone):
