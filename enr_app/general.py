@@ -1,6 +1,8 @@
-__doc__ = """Fonctions, elements (barre laterale, données, sélections) et définitions 
+__doc__ = """Fonctions, elements (barre laterale, données, sélections) et définitions
 globales pour l'application"""
 
+import os
+import s3fs
 import streamlit as st
 import pandas as pd
 import geopandas as gpd
@@ -53,17 +55,39 @@ def remove_page_items(menu=True, footer=True):
         st.markdown(""" <style> footer {visibility: hidden;} </style> """, unsafe_allow_html=True)
 
 
+def open_file(filename, mode='r'):
+    """
+    Return a file object, open with open(data/<filename>, <mode>) or fs.open(projet-connaissance-enr/filename, <mode>) for s3,
+    depending if AWS_S3_ENDPOINT is set
+
+    Args:
+        filename (str): file to open
+        mode (str): open mode
+
+    Returns:
+        File object
+    """
+    if 'AWS_S3_ENDPOINT' in os.environ:
+        # Create filesystem object
+        S3_ENDPOINT_URL = "https://" + os.environ["AWS_S3_ENDPOINT"]
+        fs = s3fs.S3FileSystem(client_kwargs={'endpoint_url': S3_ENDPOINT_URL})
+        return fs.open(f'projet-connaissance-enr/{filename}', mode=mode)
+    else:
+        return open(f'data/{filename}', mode=mode)
+
+
 @st.cache
 def load_zones():  # FIXME
     regions = pd.read_json('https://geo.api.gouv.fr/regions').rename(columns={'nom': 'Zone', 'code': 'CodeZone'})
     departements = pd.read_json('https://geo.api.gouv.fr/departements')\
         .rename(columns={'nom': 'Zone', 'code': 'CodeZone'})\
         .merge(regions.rename(columns={'Zone': 'Region', 'CodeZone': 'codeRegion'}), on='codeRegion')
-    epcis = pd.read_csv('data/epcis.csv')\
-        .merge(departements.rename(columns={'Zone': 'Departement'}),
-               left_on='DEPARTEMENTS_DE_L_EPCI', right_on='CodeZone')\
-        .drop(columns=['CodeZone', 'DEPARTEMENTS_DE_L_EPCI'])\
-        .rename(columns={'EPCI': 'CodeZone', 'NOM_EPCI': 'Zone'})
+    with open_file('epcis.csv') as file_in:
+        epcis = pd.read_csv(file_in)\
+            .merge(departements.rename(columns={'Zone': 'Departement'}),
+                left_on='DEPARTEMENTS_DE_L_EPCI', right_on='CodeZone')\
+            .drop(columns=['CodeZone', 'DEPARTEMENTS_DE_L_EPCI'])\
+            .rename(columns={'EPCI': 'CodeZone', 'NOM_EPCI': 'Zone'})
     zones = pd.concat([regions, departements, epcis], keys=['Régions', 'Départements', 'Epci']) \
         .reset_index().rename(columns={'level_0': 'TypeZone'})\
         .drop(columns=['level_1', 'codeRegion'])\
@@ -73,14 +97,15 @@ def load_zones():  # FIXME
 
 @st.cache
 def load_installations():
-    filiere = {'solaire photovoltaïque': 'Photovoltaïque', 
+    filiere = {'solaire photovoltaïque': 'Photovoltaïque',
                'éolien terrestre': 'Eolien',
                'éolien marin': 'Eolien',
                'méthanisation': 'Méthanisation électrique'
                }
 
-    installations = gpd.read_file('data/installations.gpkg', layer='installations').to_crs(epsg=4326)\
-        .assign(Filière=lambda x: x['typo'].replace(filiere), energie_GWh=lambda x: x['prod_MWh_an'] * 1e-3)
+    with open_file('installations.gpkg', 'rb') as file_in:
+        installations = gpd.read_file(file_in, layer='installations').to_crs(epsg=4326)\
+            .assign(Filière=lambda x: x['typo'].replace(filiere), energie_GWh=lambda x: x['prod_MWh_an'] * 1e-3)
 
     inst = pd.concat([installations, load_installations_biogaz()])
     return inst[~inst.geometry.is_empty]
@@ -88,30 +113,33 @@ def load_installations():
 
 @st.cache
 def load_installations_biogaz():
-    return gpd.read_file('data/installations.gpkg', layer='installations_biogaz')\
-        .to_crs(epsg=4326)\
-        .rename(columns={'nom_du_projet': 'nominstallation',
+    with open_file('installations.gpkg', 'rb') as file_in:
+        return gpd.read_file(file_in, layer='installations_biogaz')\
+            .to_crs(epsg=4326)\
+            .rename(columns={'nom_du_projet': 'nominstallation',
                          'date_de_mes': 'date_inst',
                          'quantite_annuelle_injectee_en_mwh': 'prod_MWh_an',
                          'type': 'typo'}) \
-        .assign(Filière='Injection de biométhane',
-                puiss_MW=lambda x: x['capacite_de_production_gwh_an'] / (365 * 24) * 1e3,
-                energie_GWh=lambda x: x['prod_MWh_an'] * 1e-3
-                )
+            .assign(Filière='Injection de biométhane',
+                    puiss_MW=lambda x: x['capacite_de_production_gwh_an'] / (365 * 24) * 1e3,
+                    energie_GWh=lambda x: x['prod_MWh_an'] * 1e-3
+                    )
 
 
 @st.cache
 def load_indicateurs():
-    Enedis = pd.read_csv('data/Enedis_com_a_reg_all.csv', index_col=0) \
-        .merge(load_zones(), on=['TypeZone', 'CodeZone']) \
-        .rename(columns={'Filiere.de.production': 'Filière'}) \
-        .replace({'Bio Energie': 'Méthanisation électrique'})
+    with open_file('Enedis_com_a_reg_all.csv') as file_in:
+        Enedis = pd.read_csv(file_in, index_col=0) \
+            .merge(load_zones(), on=['TypeZone', 'CodeZone']) \
+            .rename(columns={'Filiere.de.production': 'Filière'}) \
+            .replace({'Bio Energie': 'Méthanisation électrique'})
 
-    sdes = pd.read_csv('data/SDES_indicateurs_depts_regions_France.csv') \
-        .set_index('Zone').drop('Total DOM').reset_index() \
-        .replace({'Total France': 'Toutes', 'Somme': 'Régions'}) \
-        .rename(columns={'Filiere.de.production': 'Filière'}) \
-        .assign(type_estimation='SDES')
+    with open_file('SDES_indicateurs_depts_regions_France.csv') as file_in:
+        sdes = pd.read_csv(file_in) \
+            .set_index('Zone').drop('Total DOM').reset_index() \
+            .replace({'Total France': 'Toutes', 'Somme': 'Régions'}) \
+            .rename(columns={'Filiere.de.production': 'Filière'}) \
+            .assign(type_estimation='SDES')
 
     France = Enedis.query("TypeZone == 'Régions'") \
         .groupby(['indicateur', 'Filière', 'annee']).sum().reset_index() \
@@ -120,7 +148,7 @@ def load_indicateurs():
     indicateurs = pd.concat([Enedis, France, sdes]) \
         .drop_duplicates(['TypeZone', 'Zone', 'annee', 'Filière', 'indicateur'], keep='last') \
         .pivot_table(index=['TypeZone', 'Zone', 'Filière', 'annee'],
-                     values='valeur', 
+                     values='valeur',
                      columns='indicateur') \
         .assign(puiss_MW=lambda x: x['Puissance.totale.en.kW'] / 1e3,
                 energie_GWh=lambda x: x['Energie.totale.en.kWh'] / 1e6) \
@@ -275,6 +303,7 @@ def get_colors(liste_filieres=None):
     d = st.session_state['filieres'] if liste_filieres is None \
         else {fil: fil in liste_filieres for fil in filieres}
     return [x for fil, x in zip(filieres, colors) if d.get(fil)]
+
 
 def get_icon_colors(liste_filieres=None):
     """
