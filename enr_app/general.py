@@ -57,8 +57,8 @@ def remove_page_items(menu=True, footer=True):
 
 def open_file(filename, mode='r'):
     """
-    Return a file object, open with open(data/<filename>, <mode>) or fs.open(projet-connaissance-enr/filename, <mode>) for s3,
-    depending if AWS_S3_ENDPOINT is set
+    Return a file object, open with open(data/<filename>, <mode>) or fs.open(projet-connaissance-enr/filename, <mode>)
+    for s3, depending if environment variable $AWS_S3_ENDPOINT is set
 
     Args:
         filename (str): file to open
