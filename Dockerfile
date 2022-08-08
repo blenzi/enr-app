@@ -9,7 +9,7 @@ COPY ./requirements.txt .
 COPY ./README.md .
 COPY ./setup.py .
 COPY ./enr_app enr_app
-COPY ./data data
+#COPY ./data data
 
 RUN pip install --upgrade pip setuptools wheel \
     && pip install -e . \

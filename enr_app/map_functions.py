@@ -3,22 +3,25 @@ __doc__ = "Fonctions pour produire une carte des installations"
 import geopandas as gpd
 import streamlit as st
 import folium
-from enr_app.general import region_default, load_zones
+from enr_app.general import region_default, load_zones, open_file
 
 
 @st.cache
 def load_contour_regions():
-    return gpd.read_file('data/installations.gpkg', layer='regions').to_crs(epsg=4326)
+    with open_file('installations.gpkg', 'rb') as file_in:
+        return gpd.read_file(file_in, layer='regions').to_crs(epsg=4326)
 
 
 @st.cache
 def load_contour_departements():
-    return gpd.read_file('data/installations.gpkg', layer='departements').to_crs(epsg=4326)
+    with open_file('installations.gpkg', 'rb') as file_in:
+        return gpd.read_file(file_in, layer='departements').to_crs(epsg=4326)
 
 
 @st.cache
 def load_contour_EPCIs():
-    return gpd.read_file('data/installations.gpkg', layer='EPCIs').to_crs(epsg=4326)
+    with open_file('installations.gpkg', 'rb') as file_in:
+        return gpd.read_file(file_in, layer='EPCIs').to_crs(epsg=4326)
 
 
 def get_zoom(type_zone, zone):
