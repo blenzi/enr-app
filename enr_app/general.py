@@ -1,6 +1,8 @@
-__doc__ = """Fonctions, elements (barre laterale, données, sélections) et définitions 
+__doc__ = """Fonctions, elements (barre laterale, données, sélections) et définitions
 globales pour l'application"""
 
+import os
+import s3fs
 import streamlit as st
 import pandas as pd
 import geopandas as gpd
@@ -53,17 +55,39 @@ def remove_page_items(menu=True, footer=True):
         st.markdown(""" <style> footer {visibility: hidden;} </style> """, unsafe_allow_html=True)
 
 
+def open_file(filename, mode='r'):
+    """
+    Return a file object, open with open(data/<filename>, <mode>) or fs.open(projet-connaissance-enr/filename, <mode>)
+    for s3, depending if environment variable $AWS_S3_ENDPOINT is set
+
+    Args:
+        filename (str): file to open
+        mode (str): open mode
+
+    Returns:
+        File object
+    """
+    if 'AWS_S3_ENDPOINT' in os.environ:
+        # Create filesystem object
+        S3_ENDPOINT_URL = "https://" + os.environ["AWS_S3_ENDPOINT"]
+        fs = s3fs.S3FileSystem(client_kwargs={'endpoint_url': S3_ENDPOINT_URL})
+        return fs.open(f'projet-connaissance-enr/{filename}', mode=mode)
+    else:
+        return open(f'data/{filename}', mode=mode)
+
+
 @st.cache
 def load_zones():  # FIXME
     regions = pd.read_json('https://geo.api.gouv.fr/regions').rename(columns={'nom': 'Zone', 'code': 'CodeZone'})
     departements = pd.read_json('https://geo.api.gouv.fr/departements')\
         .rename(columns={'nom': 'Zone', 'code': 'CodeZone'})\
         .merge(regions.rename(columns={'Zone': 'Region', 'CodeZone': 'codeRegion'}), on='codeRegion')
-    epcis = pd.read_csv('data/epcis.csv')\
-        .merge(departements.rename(columns={'Zone': 'Departement'}),
-               left_on='DEPARTEMENTS_DE_L_EPCI', right_on='CodeZone')\
-        .drop(columns=['CodeZone', 'DEPARTEMENTS_DE_L_EPCI'])\
-        .rename(columns={'EPCI': 'CodeZone', 'NOM_EPCI': 'Zone'})
+    with open_file('epcis.csv') as file_in:
+        epcis = pd.read_csv(file_in)\
+            .merge(departements.rename(columns={'Zone': 'Departement'}),
+                   left_on='DEPARTEMENTS_DE_L_EPCI', right_on='CodeZone')\
+            .drop(columns=['CodeZone', 'DEPARTEMENTS_DE_L_EPCI'])\
+            .rename(columns={'EPCI': 'CodeZone', 'NOM_EPCI': 'Zone'})
     zones = pd.concat([regions, departements, epcis], keys=['Régions', 'Départements', 'Epci']) \
         .reset_index().rename(columns={'level_0': 'TypeZone'})\
         .drop(columns=['level_1', 'codeRegion'])\
@@ -73,12 +97,29 @@ def load_zones():  # FIXME
 
 @st.cache
 def load_installations():
-    return gpd.read_file('data/app.gpkg', layer='installations')
+    with open_file('app.gpkg', 'rb') as file_in:
+        return gpd.read_file(file_in, layer='installations')
+
+
+@st.cache
+def load_installations_biogaz():
+    with open_file('installations.gpkg', 'rb') as file_in:
+        return gpd.read_file(file_in, layer='installations_biogaz')\
+            .to_crs(epsg=4326)\
+            .rename(columns={'nom_du_projet': 'nominstallation',
+                             'date_de_mes': 'date_inst',
+                             'quantite_annuelle_injectee_en_mwh': 'prod_MWh_an',
+                             'type': 'typo'}) \
+            .assign(Filière='Injection de biométhane',
+                    puiss_MW=lambda x: x['capacite_de_production_gwh_an'] / (365 * 24) * 1e3,
+                    energie_GWh=lambda x: x['prod_MWh_an'] * 1e-3
+                    )
 
 
 @st.cache
 def load_indicateurs():
-    return pd.read_csv('data/indicateurs.csv').set_index(['TypeZone', 'Zone', 'Filière', 'annee'])
+    with open_file('indicateurs.csv') as file_in:
+        return pd.read_csv(file_in).set_index(['TypeZone', 'Zone', 'Filière', 'annee'])
 
 
 def select_zone():
@@ -201,6 +242,7 @@ def get_colors(liste_filieres=None):
         else {fil: fil in liste_filieres for fil in filieres}
     return [x for fil, x in zip(filieres, colors) if d.get(fil)]
 
+
 def get_icon_colors(liste_filieres=None):
     """
     Returns: liste de couleurs à utiliser pour les markers selon les filières sélectionnées, pour garder la même couleur par filière
@@ -209,7 +251,6 @@ def get_icon_colors(liste_filieres=None):
     d = st.session_state['filieres'] if liste_filieres is None \
         else {fil: fil in liste_filieres for fil in filieres}
     return [x for fil, x in zip(filieres, colors) if d.get(fil)]
-
 
 
 def get_markers(liste_filieres=None):

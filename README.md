@@ -16,6 +16,8 @@ pip install -e enr-app/.
 streamlit run enr-app/01_🏠_Accueil.py 
 ```
 
+Il faut avoir les données sur le répertoire `data/` ou avoir accès au `S3` du [SSPCloud](https://docs.sspcloud.fr/onyxia-guide/stockage-de-donnees): `s3/projet-connaissance-enr`.
+
 ## Creation et utilisation de conteneur
 
 ### Au SSPcloud
