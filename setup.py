@@ -4,7 +4,7 @@ from pathlib import Path
 from setuptools import setup, find_packages
 
 PKG_NAME = "enr_app"
-VERSION = os.getenv("BUILD_VERSION", "0.0.1")
+VERSION = os.getenv("BUILD_VERSION", "0.0.2")
 
 with open('README.md') as f:
     readme = f.read()
