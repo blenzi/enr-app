@@ -85,7 +85,7 @@ def load_zones():  # FIXME
     with open_file('epcis.csv') as file_in:
         epcis = pd.read_csv(file_in)\
             .merge(departements.rename(columns={'Zone': 'Departement'}),
-                left_on='DEPARTEMENTS_DE_L_EPCI', right_on='CodeZone')\
+                   left_on='DEPARTEMENTS_DE_L_EPCI', right_on='CodeZone')\
             .drop(columns=['CodeZone', 'DEPARTEMENTS_DE_L_EPCI'])\
             .rename(columns={'EPCI': 'CodeZone', 'NOM_EPCI': 'Zone'})
     zones = pd.concat([regions, departements, epcis], keys=['Régions', 'Départements', 'Epci']) \
@@ -97,18 +97,8 @@ def load_zones():  # FIXME
 
 @st.cache
 def load_installations():
-    filiere = {'solaire photovoltaïque': 'Photovoltaïque',
-               'éolien terrestre': 'Eolien',
-               'éolien marin': 'Eolien',
-               'méthanisation': 'Méthanisation électrique'
-               }
-
-    with open_file('installations.gpkg', 'rb') as file_in:
-        installations = gpd.read_file(file_in, layer='installations').to_crs(epsg=4326)\
-            .assign(Filière=lambda x: x['typo'].replace(filiere), energie_GWh=lambda x: x['prod_MWh_an'] * 1e-3)
-
-    inst = pd.concat([installations, load_installations_biogaz()])
-    return inst[~inst.geometry.is_empty]
+    with open_file('app.gpkg', 'rb') as file_in:
+        return gpd.read_file(file_in, layer='installations')
 
 
 @st.cache
@@ -117,9 +107,9 @@ def load_installations_biogaz():
         return gpd.read_file(file_in, layer='installations_biogaz')\
             .to_crs(epsg=4326)\
             .rename(columns={'nom_du_projet': 'nominstallation',
-                         'date_de_mes': 'date_inst',
-                         'quantite_annuelle_injectee_en_mwh': 'prod_MWh_an',
-                         'type': 'typo'}) \
+                             'date_de_mes': 'date_inst',
+                             'quantite_annuelle_injectee_en_mwh': 'prod_MWh_an',
+                             'type': 'typo'}) \
             .assign(Filière='Injection de biométhane',
                     puiss_MW=lambda x: x['capacite_de_production_gwh_an'] / (365 * 24) * 1e3,
                     energie_GWh=lambda x: x['prod_MWh_an'] * 1e-3
@@ -128,60 +118,8 @@ def load_installations_biogaz():
 
 @st.cache
 def load_indicateurs():
-    with open_file('Enedis_com_a_reg_all.csv') as file_in:
-        Enedis = pd.read_csv(file_in, index_col=0) \
-            .merge(load_zones(), on=['TypeZone', 'CodeZone']) \
-            .rename(columns={'Filiere.de.production': 'Filière'}) \
-            .replace({'Bio Energie': 'Méthanisation électrique'})
-
-    with open_file('SDES_indicateurs_depts_regions_France.csv') as file_in:
-        sdes = pd.read_csv(file_in) \
-            .set_index('Zone').drop('Total DOM').reset_index() \
-            .replace({'Total France': 'Toutes', 'Somme': 'Régions'}) \
-            .rename(columns={'Filiere.de.production': 'Filière'}) \
-            .assign(type_estimation='SDES')
-
-    France = Enedis.query("TypeZone == 'Régions'") \
-        .groupby(['indicateur', 'Filière', 'annee']).sum().reset_index() \
-        .assign(TypeZone='Régions', Zone='Toutes', type_estimation='Somme')
-
-    indicateurs = pd.concat([Enedis, France, sdes]) \
-        .drop_duplicates(['TypeZone', 'Zone', 'annee', 'Filière', 'indicateur'], keep='last') \
-        .pivot_table(index=['TypeZone', 'Zone', 'Filière', 'annee'],
-                     values='valeur',
-                     columns='indicateur') \
-        .assign(puiss_MW=lambda x: x['Puissance.totale.en.kW'] / 1e3,
-                energie_GWh=lambda x: x['Energie.totale.en.kWh'] / 1e6) \
-        .drop(columns=['Puissance.totale.en.kW', 'Energie.totale.en.kWh'])
-
-    return pd.concat([indicateurs, *get_indicateurs_biogaz()])
-
-
-@st.cache
-def get_indicateurs_biogaz():
-    """
-    Returns: liste de tableaux contenant les indicateurs pour le biogaz aux niveaux des EPCI, départements, régions
-    et toute la France
-    """
-    # FIXME: évolution au cours des années. 2020 c'est peut-être même pas la bonne année
-    installations_biogaz = load_installations_biogaz()
-
-    France = installations_biogaz.agg({'puiss_MW': 'sum', "energie_GWh": 'sum', 'NOM_REG': 'count'}) \
-        .to_frame().T \
-        .assign(Zone=region_default, TypeZone='Régions') \
-        .rename(columns={'NOM_REG': 'Nombre de sites'})
-
-    # Indicateurs aux niveaux EPCI, départements, régions
-    ind = [installations_biogaz.groupby(column).agg(
-        puiss_MW=("puiss_MW", 'sum'),
-        energie_GWh=("energie_GWh", 'sum'),
-        N=("puiss_MW", 'count')
-    ).reset_index().rename(columns={'N': 'Nombre de sites', column: 'Zone'})
-               .assign(TypeZone=type_zone)
-           for type_zone, column in {'Epci': 'NOM_EPCI', 'Départements': 'NOM_DEP', 'Régions': 'NOM_REG'}.items()]
-
-    return [df.assign(annee=2020, Filière='Injection de biométhane')
-              .set_index(['TypeZone', 'Zone', 'Filière', 'annee']) for df in [France] + ind]
+    with open_file('indicateurs.csv') as file_in:
+        return pd.read_csv(file_in).set_index(['TypeZone', 'Zone', 'Filière', 'annee'])
 
 
 def select_zone():
@@ -313,7 +251,6 @@ def get_icon_colors(liste_filieres=None):
     d = st.session_state['filieres'] if liste_filieres is None \
         else {fil: fil in liste_filieres for fil in filieres}
     return [x for fil, x in zip(filieres, colors) if d.get(fil)]
-
 
 
 def get_markers(liste_filieres=None):

@@ -28,7 +28,7 @@ zone = departements or regions
 
 indicateurs = select_indicateur(type_zone, zone).reset_index()
 
-cols = indicateurs.columns.drop(['TypeZone', 'Zone', 'annee', 'Filière'])
+cols = indicateurs.columns.drop(['TypeZone', 'Zone', 'annee', 'Filière', 'type_estimation'])
 indicateur = st.sidebar.selectbox('Indicateur', cols)
 
 annees = sorted(indicateurs['annee'].unique())

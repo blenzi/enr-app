@@ -8,19 +8,19 @@ from enr_app.general import region_default, load_zones, open_file
 
 @st.cache
 def load_contour_regions():
-    with open_file('installations.gpkg', 'rb') as file_in:
+    with open_file('app.gpkg', 'rb') as file_in:
         return gpd.read_file(file_in, layer='regions').to_crs(epsg=4326)
 
 
 @st.cache
 def load_contour_departements():
-    with open_file('installations.gpkg', 'rb') as file_in:
+    with open_file('app.gpkg', 'rb') as file_in:
         return gpd.read_file(file_in, layer='departements').to_crs(epsg=4326)
 
 
 @st.cache
 def load_contour_EPCIs():
-    with open_file('installations.gpkg', 'rb') as file_in:
+    with open_file('app.gpkg', 'rb') as file_in:
         return gpd.read_file(file_in, layer='EPCIs').to_crs(epsg=4326)
 
 

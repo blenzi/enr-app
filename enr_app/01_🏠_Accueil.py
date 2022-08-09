@@ -12,7 +12,7 @@ st.write("# Bienvenu à l'outil EnR")
 type_zone, zone = select_zone()
 filieres = select_filieres()
 
-annee = 2020
+annee = 2021
 try:
     puissance = int(select_indicateur(type_zone, zone, filieres, annee, 'puiss_MW').sum())
 except KeyError:
