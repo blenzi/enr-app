@@ -13,7 +13,8 @@ pip install -e enr-app/.
 
 ## Running
 ```shell
-streamlit run enr-app/01_🏠_Accueil.py 
+cd enr-app
+streamlit run enr_app/01_🏠_Accueil.py
 ```
 
 Il faut avoir les données sur le répertoire `data/` ou avoir accès au `S3` du [SSPCloud](https://docs.sspcloud.fr/onyxia-guide/stockage-de-donnees): `s3/projet-connaissance-enr`.
@@ -28,8 +29,8 @@ L'application est deployée avec `helm` en utilisant le package [enr-deployment]
 ### En local
 
 ```shell
-docker build -t blenzi/enr_app .
-docker run --rm -p 3838:3838 blenzi/enr_app
+docker build -t blenzi/enr-app .
+docker run --rm -p 3838:3838 blenzi/enr-app
 ```
 
 L'application sera disponible sur [localhost:3838](localhost:3838).
