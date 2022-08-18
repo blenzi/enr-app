@@ -80,6 +80,7 @@ def get_map(type_zone, zone):
 
     gjson = folium.GeoJson(contour, name=type_zone,
                            highlight_function=lambda feat: {'fillColor': 'blue'},
-                           tooltip=tooltip)
+                           tooltip=tooltip,
+                           zoom_on_click=True)
     gjson.add_to(mapa)
     return mapa
