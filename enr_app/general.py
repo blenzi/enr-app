@@ -159,7 +159,7 @@ def select_zone():
         liste_epcis = [epci_default] + load_zones().set_index(['TypeZone', 'Region', 'Departement'])\
             .loc[('Epci', reg, dep), 'Zone']\
             .drop_duplicates().to_list()
-    except:  # FIXME
+    except KeyError:
         liste_epcis = [epci_default] + load_zones().set_index('TypeZone').loc['Epci', 'Zone'].to_list()
 
     if 'EPCI' not in st.session_state:
@@ -245,7 +245,8 @@ def get_colors(liste_filieres=None):
 
 def get_icon_colors(liste_filieres=None):
     """
-    Returns: liste de couleurs à utiliser pour les markers selon les filières sélectionnées, pour garder la même couleur par filière
+    Returns: liste de couleurs à utiliser pour les markers selon les filières sélectionnées,
+    pour garder la même couleur par filière
     """
     colors = ['blue', 'orange', 'green', 'red', 'purple']
     d = st.session_state['filieres'] if liste_filieres is None \

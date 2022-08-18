@@ -2,7 +2,7 @@ import altair as alt
 import streamlit as st
 import pandas as pd
 from enr_app.general import select_zone, select_filieres, select_indicateur, \
-    get_colors, get_markers, get_sources, remove_page_items
+    get_colors, get_markers, get_sources, remove_page_items, open_file
 
 remove_page_items()
 type_zone, zone = select_zone()
@@ -20,8 +20,9 @@ df = select_indicateur(type_zone, zone, filiere=filieres, indicateur=indicateur)
 
 if type_zone == 'Régions' and zone == 'Grand Est' and st.checkbox('Objectifs SRADDET'):
     add_sraddet = True
-    sraddet = pd.read_csv('data/objectifs_SRADDET_GrandEst.csv', sep=';').set_index('Filière').stack() \
-        .rename('Objectif').rename_axis(index={None: 'annee'}).reset_index().astype({'annee': int})
+    with open_file('objectifs_SRADDET_GrandEst.csv') as file_in:
+        sraddet = pd.read_csv(file_in, sep=';').set_index('Filière').stack() \
+            .rename('Objectif').rename_axis(index={None: 'annee'}).reset_index().astype({'annee': int})
 
     df = pd.merge(df, sraddet.loc[sraddet['Filière'].isin(filieres)], on=['Filière', 'annee'], how='outer')\
         .sort_values(['Filière', 'annee']).reset_index(drop=True)
