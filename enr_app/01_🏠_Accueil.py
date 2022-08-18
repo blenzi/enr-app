@@ -36,7 +36,7 @@ col3.metric(f'Nombre de sites en {annee}', nombre)
 col3.caption(f'Source: {get_sources("Nombre de sites", type_zone)}')
 
 
-st.markdown(f"## Installations en France métropolitaine et départements d'outre-mer")
+st.markdown("## Installations en France métropolitaine et départements d'outre-mer")
 st.write(f'### {type_zone.strip("s")}: {zone}')
 
 if type_zone != 'Régions':

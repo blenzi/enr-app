@@ -9,13 +9,15 @@ from enr_app.general import region_default, load_zones, open_file
 @st.cache
 def load_contour_regions():
     with open_file('app.gpkg', 'rb') as file_in:
-        return gpd.read_file(file_in, layer='regions').to_crs(epsg=4326)
+        return gpd.read_file(file_in, layer='regions').to_crs(epsg=4326)\
+            .rename(columns={'NOM_REG': 'Région', 'REG': 'Code'})
 
 
 @st.cache
 def load_contour_departements():
     with open_file('app.gpkg', 'rb') as file_in:
-        return gpd.read_file(file_in, layer='departements').to_crs(epsg=4326)
+        return gpd.read_file(file_in, layer='departements').to_crs(epsg=4326)\
+            .rename(columns={'NOM_DEP': 'Département', 'DEP': 'Code'})
 
 
 @st.cache
@@ -45,18 +47,23 @@ def get_zoom(type_zone, zone):
 
 def get_map(type_zone, zone):
     if type_zone == 'Régions' and zone == region_default:
-        contour = load_contour_regions().query("REG > '10'")
+        contour = load_contour_regions().query("Code > '10'")
+        tooltip = folium.GeoJsonTooltip(['Région', 'Code'])
     elif type_zone == 'Régions':
-        contour = load_contour_regions().query(f'NOM_REG == "{zone}"')
+        contour = load_contour_regions().query(f'Région == "{zone}"')
+        tooltip = folium.GeoJsonTooltip(['Région', 'Code'])
         # location = [contour_zone.centroid.y, contour_zone.centroid.x]
     elif type_zone == 'Départements':
-        contour = load_contour_departements().query(f'NOM_DEP == "{zone}"')
+        contour = load_contour_departements().query(f'Département == "{zone}"')
+        tooltip = folium.GeoJsonTooltip(['Département', 'Code'])
         # location = [contour_zone.centroid.y, contour_zone.centroid.x]
     elif type_zone == 'Epci':
         contour = load_contour_EPCIs().query(f'Zone == "{zone}"')
+        tooltip = folium.GeoJsonTooltip(['Zone', 'EPCI'])
         if not len(contour):  # FIXME: entrées manquantes ?
             dep = load_zones().set_index(['TypeZone', 'Zone']).loc[(type_zone, zone), 'Departement'].values[0]
-            contour = load_contour_departements().query(f'NOM_DEP == "{dep}"')
+            contour = load_contour_departements().query(f'Département == "{dep}"')
+            tooltip = folium.GeoJsonTooltip(['Département', 'Code'])
     else:
         raise ValueError(f'Invalid type_zone: {type_zone}')
     location = [contour.geometry.apply(lambda g: g.centroid.y).mean(),
@@ -70,6 +77,9 @@ def get_map(type_zone, zone):
                       location=location,
                       zoom_start=get_zoom(type_zone, zone)
                       )
-    gjson = folium.GeoJson(contour, name=type_zone)
+
+    gjson = folium.GeoJson(contour, name=type_zone,
+                           highlight_function=lambda feat: {'fillColor': 'blue'},
+                           tooltip=tooltip)
     gjson.add_to(mapa)
     return mapa
