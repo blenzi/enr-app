@@ -1,6 +1,6 @@
 import streamlit as st
 import folium
-from streamlit_folium import folium_static
+from streamlit_folium import st_folium
 from enr_app.general import select_zone, select_filieres, select_installations, select_indicateur, \
     get_sources, get_icon_colors, remove_page_items
 from enr_app.map_functions import get_map
@@ -66,7 +66,8 @@ if st.session_state['show_installations']:
             gjson.add_to(mapa)
 
 folium.LayerControl().add_to(mapa)
-folium_static(mapa)
+st_data = st_folium(mapa)
+
 if st.session_state['show_installations']:
     st.caption(f'Source: {get_sources("installations", type_zone)}')
     st.download_button('Exporter au format csv',
@@ -77,3 +78,12 @@ if st.session_state['show_installations']:
     st.dataframe(installations[columns])
     st.caption(f'Source: {get_sources("installations", type_zone)}')
     st.write(f'Installations: {n_installations}')
+
+with st.expander("Expand to see data returned to Python"):
+    st_data
+    if st_data.get('last_object_clicked'):
+        properties = st_data['last_active_drawing']['properties']
+        try:
+            properties['Région']
+        except KeyError:
+            properties['Département']
