@@ -17,6 +17,7 @@ epci_default = 'Tous'
 filieres = ['Eolien', 'Injection de biométhane', 'Méthanisation électrique', 'Photovoltaïque']
 sources = {
     'ODRE': 'ODRE [[1]](https://odre.opendatasoft.com/explore/dataset/registre-national-installation-production-stockage-electricite-agrege-311220/information/?disjunctive.epci&disjunctive.departement&disjunctive.region&disjunctive.filiere&disjunctive.combustible&disjunctive.combustiblessecondaires&disjunctive.technologie&disjunctive.regime&disjunctive.gestionnaire) [[2]](https://odre.opendatasoft.com/explore/dataset/points-dinjection-de-biomethane-en-france/information/?disjunctive.site&disjunctive.nom_epci&disjunctive.departement&disjunctive.region&disjunctive.type_de_reseau&disjunctive.grx_demandeur) [[3]](https://opendata.reseaux-energies.fr/explore/dataset/injection-annuelle-biomethane-pitp-grtgaz)',  # noqa: E501
+    'ODRE_gaz': 'ODRE [[1]](https://odre.opendatasoft.com/explore/dataset/points-dinjection-de-biomethane-en-france/information/?disjunctive.site&disjunctive.nom_epci&disjunctive.departement&disjunctive.region&disjunctive.type_de_reseau&disjunctive.grx_demandeur) [[2]](https://opendata.reseaux-energies.fr/explore/dataset/injection-annuelle-biomethane-pitp-grtgaz)',  # noqa: E501
     'GDRF': '[GRDF](https://opendata.grdf.fr/explore/dataset/capacite-et-quantite-dinjection-de-biomethane)',
     'SDES': 'SDES [[1]](https://www.statistiques.developpement-durable.gouv.fr/tableau-de-bord-solaire-photovoltaique-quatrieme-trimestre-2021?rubrique=21&dossier=172) [[2]](https://www.statistiques.developpement-durable.gouv.fr/tableau-de-bord-eolien-quatrieme-trimestre-2021)',  # noqa: E501
 }
@@ -35,7 +36,9 @@ def get_sources(indicateur, type_zone):
     if indicateur in ("installations", "energie_GWh"):
         return f"{sources['ODRE']}, {sources['GDRF']}"
     if indicateur in ("puiss_MW", "Nombre de sites"):
-        return sources["SDES"] if type_zone in ("Régions", "Départements") else f"{sources['ODRE']}, {sources['GDRF']}"
+        return f"{sources['SDES']}, {sources['ODRE_gaz']}, {sources['GDRF']}" \
+            if type_zone in ("Régions", "Départements") \
+            else f"{sources['ODRE']}, {sources['GDRF']}"
     raise ValueError(f"Indicateur pas connu: {indicateur}")
 
 
@@ -229,7 +232,10 @@ def select_indicateur(type_zone, zone, filiere=slice(None), annee=slice(None), i
     Returns: DataFrame avec le(s) indicateur(s) sélectionné(s)
 
     """
-    return load_indicateurs().loc[(type_zone, zone, filiere, annee), indicateur]
+    try:
+        return load_indicateurs().loc[(type_zone, zone, filiere, annee), indicateur]
+    except KeyError:
+        return pd.DataFrame(columns=['TypeZone', 'Zone', 'Filière', 'annee', indicateur], dtype=str)
 
 
 def get_colors(liste_filieres=None):
