@@ -13,30 +13,34 @@ type_zone, zone = select_zone()
 filieres = select_filieres()
 
 annee = 2021
-try:
-    puissance = int(select_indicateur(type_zone, zone, filieres, annee, 'puiss_MW').sum())
-except KeyError:
-    puissance = 'N/A'
-try:
-    energie = int(select_indicateur(type_zone, zone, filieres, annee, 'energie_GWh').sum())
-except KeyError:
-    energie = 'N/A'
-try:
-    nombre = int(select_indicateur(type_zone, zone, filieres, annee, 'Nombre de sites').sum())
-except KeyError:
-    nombre = 'N/A'
+tuiles = {
+    'puiss_MW':
+        {
+            'texte': f'Puissance maximum installée en {annee}',
+            'valeur': lambda x: f'{int(x)} MW'
+        },
+    'energie_GWh':
+        {
+            'texte': f'Énergie produite en {annee}',
+            'valeur': lambda x: f'{int(x)} GWh'
+        },
+    'Nombre de sites':
+        {
+            'texte': f'Nombre de sites en {annee}',
+            'valeur': lambda x: f'{int(x)}'
+        }
+}
 
+for col, (indicateur, tuile) in zip(st.columns(3), tuiles.items()):
+    df = select_indicateur(type_zone, zone, filieres, annee, indicateur)
+    if df.empty:
+        col.metric(tuile['texte'], 'N/A')
+    else:
+        col.metric(tuile['texte'], tuile['valeur'](df.sum()))
+    col.caption(f'Source: {get_sources(indicateur, type_zone)}')
 
-col1, col2, col3 = st.columns(3)
-col1.metric(f'Puissance maximum installée en {annee}', f'{puissance} MW')
-col1.caption(f'Source: {get_sources("puiss_MW", type_zone)}')
-col2.metric(f'Énergie produite en {annee}', f'{energie} GWh')
-col2.caption(f'Source: {get_sources("energie_GWh", type_zone)}')
-col3.metric(f'Nombre de sites en {annee}', nombre)
-col3.caption(f'Source: {get_sources("Nombre de sites", type_zone)}')
-
-
-st.markdown(f"## Installations en France métropolitaine et départements d'outre-mer")
+# Carte
+st.markdown("## Installations en France métropolitaine et départements d'outre-mer")
 st.write(f'### {type_zone.strip("s")}: {zone}')
 
 if type_zone != 'Régions':
