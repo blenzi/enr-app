@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 PKG_NAME = "enr_app"
 VERSION = os.getenv("BUILD_VERSION", "0.0.2")
