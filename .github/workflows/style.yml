@@ -47,33 +47,33 @@ jobs:
           isort enr_app/
           if [ -n "$(git status --porcelain --untracked-files=no)" ]; then exit 1; else echo "All clear"; fi
 
-  mypy:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        python: [3.9]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python }}
-          architecture: x64
-      - name: Cache python modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-python-${{ matrix.python }}-${{ hashFiles('requirements.txt') }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt --upgrade
-          pip install mypy
-      - name: Run mypy
-        run: |
-          mypy --version
-          mypy
+#  mypy:
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        os: [ubuntu-latest]
+#        python: [3.9]
+#    steps:
+#      - uses: actions/checkout@v2
+#      - name: Set up Python
+#        uses: actions/setup-python@v1
+#        with:
+#          python-version: ${{ matrix.python }}
+#          architecture: x64
+#      - name: Cache python modules
+#        uses: actions/cache@v2
+#        with:
+#          path: ~/.cache/pip
+#          key: ${{ runner.os }}-python-${{ matrix.python }}-${{ hashFiles('requirements.txt') }}
+#      - name: Install dependencies
+#        run: |
+#          python -m pip install --upgrade pip
+#          pip install -r requirements.txt --upgrade
+#          pip install mypy
+#      - name: Run mypy
+#        run: |
+#          mypy --version
+#          mypy enr_app/ --ignore-missing-imports
 
   black:
     runs-on: ${{ matrix.os }}
