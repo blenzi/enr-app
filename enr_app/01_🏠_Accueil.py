@@ -1,8 +1,10 @@
-import streamlit as st
 import folium
+import streamlit as st
 from streamlit_folium import folium_static
-from enr_app.general import select_zone, select_filieres, select_installations, select_indicateur, \
-    get_sources, get_icon_colors, remove_page_items
+
+from enr_app.general import (get_icon_colors, get_sources, remove_page_items,
+                             select_filieres, select_indicateur,
+                             select_installations, select_zone)
 from enr_app.map_functions import get_map
 
 st.set_page_config('Outil EnR')

@@ -2,11 +2,11 @@ __doc__ = """Fonctions, elements (barre laterale, données, sélections) et déf
 globales pour l'application"""
 
 import os
+
+import geopandas as gpd
+import pandas as pd
 import s3fs
 import streamlit as st
-import pandas as pd
-import geopandas as gpd
-
 
 # Defaults
 region_default = 'Toutes'

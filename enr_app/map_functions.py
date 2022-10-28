@@ -1,9 +1,10 @@
 __doc__ = "Fonctions pour produire une carte des installations"
 
+import folium
 import geopandas as gpd
 import streamlit as st
-import folium
-from enr_app.general import region_default, load_zones, open_file
+
+from enr_app.general import load_zones, open_file, region_default
 
 
 @st.cache

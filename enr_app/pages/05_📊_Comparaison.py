@@ -1,7 +1,9 @@
 import altair as alt
 import streamlit as st
-from enr_app.general import remove_page_items, load_zones, select_filieres, select_indicateur, get_colors, get_sources
 
+from enr_app.general import (get_colors, get_sources, load_zones,
+                             remove_page_items, select_filieres,
+                             select_indicateur)
 
 remove_page_items()
 st.title('Comparer les territoires')
