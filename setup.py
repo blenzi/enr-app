@@ -1,15 +1,15 @@
 import os
 from pathlib import Path
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 PKG_NAME = "enr_app"
 VERSION = os.getenv("BUILD_VERSION", "0.0.2")
 
-with open('README.md') as f:
+with open("README.md") as f:
     readme = f.read()
 
-with open('requirements.txt') as f:
+with open("requirements.txt") as f:
     requirements = f.read().splitlines()
 
 if __name__ == "__main__":
@@ -36,7 +36,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
             "Operating System :: OS Independent",
         ],
-        python_requires='>=3.8',
+        python_requires=">=3.8",
         install_requires=requirements,
         include_package_data=True,
     )
