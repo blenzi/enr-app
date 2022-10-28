@@ -14,9 +14,9 @@ st.write(f'### {type_zone.strip("s")}: {zone}')
 indicateur = "energie_GWh"
 add_sraddet = False
 df = select_indicateur(type_zone, zone, filiere=filieres, indicateur=indicateur)\
-  .reset_index()\
-  .rename(columns={'energie_GWh': 'Énergie produite (GWh)'})\
-  .drop(columns=['TypeZone', 'Zone'])
+    .reset_index()\
+    .rename(columns={'energie_GWh': 'Énergie produite (GWh)'})\
+    .drop(columns=['TypeZone', 'Zone'])
 
 if type_zone == 'Régions' and zone == 'Grand Est' and st.checkbox('Objectifs SRADDET'):
     add_sraddet = True

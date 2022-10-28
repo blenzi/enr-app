@@ -1,7 +1,7 @@
 import altair as alt
 import streamlit as st
-from enr_app.general import remove_page_items, load_zones, select_filieres, select_indicateur, \
-    get_colors, get_sources
+from enr_app.general import remove_page_items, load_zones, select_filieres, select_indicateur, get_colors, get_sources
+
 
 remove_page_items()
 st.title('Comparer les territoires')
@@ -40,11 +40,11 @@ filieres = select_filieres()
 if zone:
     try:
         df = select_indicateur(type_zone, zone, filieres, annee, indicateur).reset_index()
-        c = alt.Chart(df, width=700, height=100*len(zone)).mark_bar().encode(
-          x=indicateur,
-          y='Zone:O',
-          color=alt.Color('Filière:N', scale=alt.Scale(range=get_colors())),
-          tooltip=['Zone', 'Filière', indicateur]
+        c = alt.Chart(df, width=700, height=100 * len(zone)).mark_bar().encode(
+            x=indicateur,
+            y='Zone:O',
+            color=alt.Color('Filière:N', scale=alt.Scale(range=get_colors())),
+            tooltip=['Zone', 'Filière', indicateur]
         )
         st.altair_chart(c)
         st.caption(f'Source: {get_sources(indicateur, type_zone)}')

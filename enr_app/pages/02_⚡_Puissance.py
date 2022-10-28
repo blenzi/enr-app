@@ -11,15 +11,15 @@ st.write(f'### {type_zone.strip("s")}: {zone}')
 
 indicateur = 'puiss_MW'
 df = select_indicateur(type_zone, zone, filiere=filieres, indicateur=indicateur)\
-  .reset_index()\
-  .rename(columns={'puiss_MW': 'Puissance maximum (MW)'})\
-  .drop(columns=['TypeZone', 'Zone'])
+    .reset_index()\
+    .rename(columns={'puiss_MW': 'Puissance maximum (MW)'})\
+    .drop(columns=['TypeZone', 'Zone'])
 
 c = alt.Chart(df, width=600).mark_bar().encode(
-  x='annee:O',
-  y='Puissance maximum (MW):Q',
-  color=alt.Color('Filière:N', scale=alt.Scale(range=get_colors())),
-  tooltip=['annee', 'Filière', 'Puissance maximum (MW)']
+    x='annee:O',
+    y='Puissance maximum (MW):Q',
+    color=alt.Color('Filière:N', scale=alt.Scale(range=get_colors())),
+    tooltip=['annee', 'Filière', 'Puissance maximum (MW)']
 )
 
 st.altair_chart(c)
