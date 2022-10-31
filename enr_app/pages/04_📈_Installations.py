@@ -24,6 +24,7 @@ df = (
     .drop(columns=["TypeZone", "Zone"])
     .astype({indicateur: int})
 )
+colors = get_colors(liste_filieres=df["Filière"].unique())
 
 c = (
     alt.Chart(df, width=600)
@@ -31,7 +32,7 @@ c = (
     .encode(
         x="annee:O",
         y="Nombre de sites:Q",
-        color=alt.Color("Filière:N", scale=alt.Scale(range=get_colors())),
+        color=alt.Color("Filière:N", scale=alt.Scale(range=colors)),
         tooltip=["annee", "Filière", indicateur],
     )
 )

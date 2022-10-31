@@ -53,6 +53,7 @@ if type_zone == "Régions" and zone == "Grand Est" and st.checkbox("Objectifs SR
         .reset_index(drop=True)
     )
 
+colors = get_colors(liste_filieres=df["Filière"].unique())
 line = (
     alt.Chart(df, width=600)
     .mark_line()
@@ -64,30 +65,35 @@ line = (
     )
 )
 
-points = line.mark_point(filled=True).encode(
+points = line.mark_point(filled=True, size=100).encode(
     color=alt.Color("Filière", scale=alt.Scale(range=get_colors())),
     shape=alt.Shape("Filière", scale=alt.Scale(range=get_markers())),
 )
 
 layers = [line, points]
 if add_sraddet:
-    # lf = df.dropna(subset='Objectif')['Filière'].unique()
-    # st.write(lf, get_colors(lf) )
-    line_sraddet = line.mark_line(strokeDash=[1.0], point=True).encode(
-        x="annee:O",
-        y="Objectif",
-        color=alt.Color("Filière", scale=alt.Scale(range=get_colors()), legend=None),
-        tooltip=["annee", "Filière", "Objectif"],
+    ds = df.dropna(subset=["Objectif"])
+    lf = ds["Filière"].unique()
+    line_sraddet = (
+        alt.Chart(ds, width=600)
+        .mark_line(strokeDash=[1.0])
+        .encode(
+            x="annee:O",
+            y="Objectif",
+            color=alt.Color(
+                "Filière", scale=alt.Scale(range=get_colors(lf)), legend=None
+            ),
+            tooltip=["annee", "Filière", "Objectif"],
+        )
     )
     # FIXME: Colors and markers are wrong because not all Filières are present ?
-    points_sraddet = line_sraddet.mark_point(filled=False).encode(
-        color=alt.Color("Filière", scale=alt.Scale(range=get_colors(df)), legend=None),
-        shape=alt.Shape("Filière", scale=alt.Scale(range=get_markers(df)), legend=None),
+    points_sraddet = line_sraddet.mark_point(filled=False, size=100).encode(
+        color=alt.Color("Filière", scale=alt.Scale(range=get_colors(lf)), legend=None),
+        shape=alt.Shape("Filière", scale=alt.Scale(range=get_markers(lf)), legend=None),
     )
-    layers.extend([line_sraddet])  # , points_sraddet])
+    layers.extend([line_sraddet, points_sraddet])
 
 c = alt.layer(*layers).resolve_scale(color="independent", shape="independent")
-
 st.altair_chart(c)
 st.caption(f'Source: {get_sources("energie_GWh", type_zone)}')
 

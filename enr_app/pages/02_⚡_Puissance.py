@@ -25,13 +25,14 @@ df = (
     .drop(columns=["TypeZone", "Zone"])
 )
 
+colors = get_colors(liste_filieres=df["Filière"].unique())
 c = (
     alt.Chart(df, width=600)
     .mark_bar()
     .encode(
         x="annee:O",
         y="Puissance maximum (MW):Q",
-        color=alt.Color("Filière:N", scale=alt.Scale(range=get_colors())),
+        color=alt.Color("Filière:N", scale=alt.Scale(range=colors)),
         tooltip=["annee", "Filière", "Puissance maximum (MW)"],
     )
 )

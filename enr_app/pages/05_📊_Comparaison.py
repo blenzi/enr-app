@@ -63,13 +63,14 @@ if zone:
         df = select_indicateur(
             type_zone, zone, filieres, annee, indicateur
         ).reset_index()
+        colors = get_colors(liste_filieres=df["Filière"].unique())
         c = (
             alt.Chart(df, width=700, height=100 * len(zone))
             .mark_bar()
             .encode(
                 x=indicateur,
                 y="Zone:O",
-                color=alt.Color("Filière:N", scale=alt.Scale(range=get_colors())),
+                color=alt.Color("Filière:N", scale=alt.Scale(range=colors)),
                 tooltip=["Zone", "Filière", indicateur],
             )
         )
