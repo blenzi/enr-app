@@ -3,8 +3,8 @@ import streamlit as st
 from streamlit_folium import folium_static
 
 from enr_app.general import (
-    get_icon_colors,
     get_sources,
+    icon_colors,
     remove_page_items,
     select_filieres,
     select_indicateur,
@@ -84,10 +84,10 @@ if st.session_state["show_installations"]:
             )
         tooltip = folium.GeoJsonTooltip(["nominstallation", "Filière"])
         popup = folium.GeoJsonPopup(columns)
-        for (name, group), color in zip(subset.groupby("Filière"), get_icon_colors()):
+        for (name, group) in subset.groupby("Filière"):
             tooltip = folium.GeoJsonTooltip(["nominstallation", "Filière"])
             popup = folium.GeoJsonPopup(columns)
-            marker = folium.Marker(icon=folium.Icon(color=color))
+            marker = folium.Marker(icon=folium.Icon(color=icon_colors[name]))
             gjson = folium.GeoJson(
                 group, name=name, tooltip=tooltip, popup=popup, marker=marker
             )

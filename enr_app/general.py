@@ -20,6 +20,14 @@ filieres = [
     "Méthanisation électrique",
     "Photovoltaïque",
 ]
+
+icon_colors = {
+    "Eolien": "blue",
+    "Injection de biométhane": "orange",
+    "Méthanisation électrique": "green",
+    "Photovoltaïque": "red",
+}
+
 sources = {
     "ODRÉ": "ODRÉ [[1]](https://odre.opendatasoft.com/explore/dataset/registre-national-installation-production-stockage-electricite-agrege-311220/information/?disjunctive.epci&disjunctive.departement&disjunctive.region&disjunctive.filiere&disjunctive.combustible&disjunctive.combustiblessecondaires&disjunctive.technologie&disjunctive.regime&disjunctive.gestionnaire) [[2]](https://odre.opendatasoft.com/explore/dataset/points-dinjection-de-biomethane-en-france/information/?disjunctive.site&disjunctive.nom_epci&disjunctive.departement&disjunctive.region&disjunctive.type_de_reseau&disjunctive.grx_demandeur) [[3]](https://opendata.reseaux-energies.fr/explore/dataset/injection-annuelle-biomethane-pitp-grtgaz)",  # noqa: E501
     "ODRÉ_gaz": "ODRÉ [[1]](https://odre.opendatasoft.com/explore/dataset/points-dinjection-de-biomethane-en-france/information/?disjunctive.site&disjunctive.nom_epci&disjunctive.departement&disjunctive.region&disjunctive.type_de_reseau&disjunctive.grx_demandeur) [[2]](https://opendata.reseaux-energies.fr/explore/dataset/injection-annuelle-biomethane-pitp-grtgaz)",  # noqa: E501
@@ -259,7 +267,8 @@ def select_filieres():
     values = {x: st.session_state.get(x, True) for x in filieres}
     emojis = ["🟦", "🟨", "🟩", "🟥"]
     st.session_state["filieres"] = {
-        k: st.sidebar.checkbox(f"{e} {k}", v, key=k) for e, (k, v) in zip(emojis, values.items())
+        k: st.sidebar.checkbox(f"{e} {k}", v, key=k)
+        for e, (k, v) in zip(emojis, values.items())
     }
     return [k for k, v in st.session_state["filieres"].items() if v]
 
@@ -316,20 +325,6 @@ def get_colors(liste_filieres=None):
     """
     # colors from category10 in https://vega.github.io/vega/docs/schemes/#categorical
     colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]
-    d = (
-        st.session_state["filieres"]
-        if liste_filieres is None
-        else {fil: fil in liste_filieres for fil in filieres}
-    )
-    return [x for fil, x in zip(filieres, colors) if d.get(fil)]
-
-
-def get_icon_colors(liste_filieres=None):
-    """
-    Returns: liste de couleurs à utiliser pour les markers selon les filières sélectionnées,
-    pour garder la même couleur par filière
-    """
-    colors = ["blue", "orange", "green", "red", "purple"]
     d = (
         st.session_state["filieres"]
         if liste_filieres is None
