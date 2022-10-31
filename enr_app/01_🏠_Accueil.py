@@ -74,11 +74,13 @@ if st.session_state["show_installations"]:
         installations.geometry.x.median(),
     ]
     n_installations = len(installations)
-    subset = installations.iloc[:1000]  # TODO: remove limitation ?
+    max_installations = 1000
+    subset = installations.iloc[:max_installations]  # TODO: remove limitation ?
     if n_installations:
-        if n_installations > 1000:
+        if n_installations > max_installations:
             st.write(
-                "N.B.: uniquement 1000 installations affichées. Veuillez sélectionner une zone plus restreinte"
+                f"N.B.: uniquement {max_installations} installations affichées. "
+                "Veuillez sélectionner une zone plus restreinte"
             )
         tooltip = folium.GeoJsonTooltip(["nominstallation", "Filière"])
         popup = folium.GeoJsonPopup(columns)
