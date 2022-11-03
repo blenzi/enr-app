@@ -22,6 +22,7 @@ df = (
     select_indicateur(type_zone, zone, filiere=filieres, indicateur=indicateur)
     .reset_index()
     .rename(columns={"puiss_MW": "Puissance maximum (MW)"})
+    .dropna()
     .drop(columns=["TypeZone", "Zone"])
 )
 
