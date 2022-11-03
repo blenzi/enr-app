@@ -27,7 +27,11 @@ df = (
     .reset_index()
     .rename(columns={"energie_GWh": "Énergie produite (GWh)"})
     .drop(columns=["TypeZone", "Zone"])
+    .dropna()
 )
+
+colors = get_colors(liste_filieres=df["Filière"].unique())
+markers = get_markers(liste_filieres=df["Filière"].unique())
 
 if type_zone == "Régions" and zone == "Grand Est" and st.checkbox("Objectifs SRADDET"):
     add_sraddet = True
@@ -53,21 +57,20 @@ if type_zone == "Régions" and zone == "Grand Est" and st.checkbox("Objectifs SR
         .reset_index(drop=True)
     )
 
-colors = get_colors(liste_filieres=df["Filière"].unique())
 line = (
     alt.Chart(df, width=600)
     .mark_line()
     .encode(
         x="annee:O",
         y="Énergie produite (GWh)",
-        color=alt.Color("Filière", scale=alt.Scale(range=get_colors()), legend=None),
+        color=alt.Color("Filière", scale=alt.Scale(range=colors), legend=None),
         tooltip=["annee", "Filière", "Énergie produite (GWh)"],
     )
 )
 
 points = line.mark_point(filled=True, size=100).encode(
-    color=alt.Color("Filière", scale=alt.Scale(range=get_colors())),
-    shape=alt.Shape("Filière", scale=alt.Scale(range=get_markers())),
+    color=alt.Color("Filière", scale=alt.Scale(range=colors)),
+    shape=alt.Shape("Filière", scale=alt.Scale(range=markers)),
 )
 
 layers = [line, points]

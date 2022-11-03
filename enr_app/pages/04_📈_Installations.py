@@ -22,6 +22,7 @@ df = (
     select_indicateur(type_zone, zone, filiere=filieres, indicateur=indicateur)
     .reset_index()
     .drop(columns=["TypeZone", "Zone"])
+    .dropna()
     .astype({indicateur: int})
 )
 colors = get_colors(liste_filieres=df["Filière"].unique())
