@@ -265,7 +265,7 @@ def select_filieres():
     """
     st.sidebar.write("Filières")
     values = {x: st.session_state.get(x, True) for x in filieres}
-    emojis = ["🟦", "🟨", "🟩", "🟥"]
+    emojis = ["🟦", "🟧", "🟩", "🟥"]
     st.session_state["filieres"] = {
         k: st.sidebar.checkbox(f"{e} {k}", v, key=k)
         for e, (k, v) in zip(emojis, values.items())
